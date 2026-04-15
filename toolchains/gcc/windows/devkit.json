@@ -1,0 +1,14 @@
+{
+  "id": "gcc-windows",
+  "name": "GCC + MinGW-w64 (Windows)",
+  "version": "15.2.0",
+  "category": "Toolchains",
+  "platform": "windows",
+  "description": "WinLibs GCC 15.2.0 with MinGW-w64 13.0.0 UCRT — prebuilt Windows x64 native toolchain.",
+  "setup": "toolchains/gcc/windows/setup.sh",
+  "receipt_name": "gcc-windows",
+  "estimate": "~1 min",
+  "uses_prebuilt": true,
+  "sort_order": 12,
+  "source": "default"
+}

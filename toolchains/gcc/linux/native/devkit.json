@@ -1,0 +1,14 @@
+{
+  "id": "gcc-linux-native",
+  "name": "GCC Native (RHEL 8)",
+  "version": "15",
+  "category": "Toolchains",
+  "platform": "linux",
+  "description": "gcc-toolset-15 for RHEL 8 installed via RPMs — no internet or EPEL required.",
+  "setup": "toolchains/gcc/linux/native/setup.sh",
+  "receipt_name": "gcc-linux-native",
+  "estimate": "~2 min",
+  "uses_prebuilt": true,
+  "sort_order": 13,
+  "source": "default"
+}

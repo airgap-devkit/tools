@@ -1,0 +1,14 @@
+{
+  "id": "python",
+  "name": "Python",
+  "version": "3.14.4",
+  "category": "Languages",
+  "platform": "both",
+  "description": "Portable Python 3.14.4 — Windows embeddable zip (~12 MB) or Linux python-build-standalone tar.gz; includes 19 vendored pip packages.",
+  "setup": "languages/python/setup.sh",
+  "receipt_name": "python",
+  "estimate": "~1 min",
+  "uses_prebuilt": true,
+  "sort_order": 30,
+  "source": "default"
+}

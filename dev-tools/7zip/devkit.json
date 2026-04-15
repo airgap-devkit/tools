@@ -1,0 +1,14 @@
+{
+  "id": "7zip",
+  "name": "7-Zip",
+  "version": "26.00",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "7-Zip 26.00 prebuilt for Windows x64 and Linux x86_64 — supports both admin and user install modes.",
+  "setup": "dev-tools/7zip/setup.sh",
+  "receipt_name": "7zip",
+  "estimate": "~15s",
+  "uses_prebuilt": true,
+  "sort_order": 50,
+  "source": "default"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "cmake",
+  "name": "CMake",
+  "version": "4.3.1",
+  "category": "Build Tools",
+  "platform": "both",
+  "description": "CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64 — both files under 100 MB, no split required.",
+  "setup": "build-tools/cmake/setup.sh",
+  "receipt_name": "cmake",
+  "estimate": "~30s",
+  "uses_prebuilt": true,
+  "sort_order": 20,
+  "source": "default"
+}

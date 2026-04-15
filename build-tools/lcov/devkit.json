@@ -1,0 +1,14 @@
+{
+  "id": "lcov",
+  "name": "lcov",
+  "version": "2.4",
+  "category": "Build Tools",
+  "platform": "linux",
+  "description": "Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux — vendored source and Perl dependencies, no CPAN or EPEL required.",
+  "setup": "build-tools/lcov/setup.sh",
+  "receipt_name": "lcov",
+  "estimate": "~2 min",
+  "uses_prebuilt": true,
+  "sort_order": 21,
+  "source": "default"
+}

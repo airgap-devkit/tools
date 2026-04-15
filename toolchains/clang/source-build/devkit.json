@@ -1,0 +1,14 @@
+{
+  "id": "clang-source-build",
+  "name": "Clang / LLVM (source build)",
+  "version": "22.1.2",
+  "category": "Toolchains",
+  "platform": "both",
+  "description": "Builds clang-format and clang-tidy from LLVM 22.1.2 source; prebuilt binaries also available for both platforms.",
+  "setup": "toolchains/clang/source-build/setup.sh",
+  "receipt_name": "clang-source-build",
+  "estimate": "~40 min (source) / ~30s (prebuilt)",
+  "uses_prebuilt": true,
+  "sort_order": 10,
+  "source": "default"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "grpc",
+  "name": "gRPC",
+  "version": "1.78.1",
+  "category": "Frameworks",
+  "platform": "windows",
+  "description": "gRPC v1.78.1 for Windows C++ — prebuilt .zip (4 parts) or source build from vendored recursive bundle (~40 min, MSVC required).",
+  "setup": "frameworks/grpc/setup.sh",
+  "receipt_name": "grpc",
+  "estimate": "~1 min (prebuilt) / ~40 min (source)",
+  "uses_prebuilt": true,
+  "sort_order": 40,
+  "source": "default"
+}

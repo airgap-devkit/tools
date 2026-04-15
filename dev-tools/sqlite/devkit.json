@@ -1,0 +1,14 @@
+{
+  "id": "sqlite",
+  "name": "SQLite CLI",
+  "version": "3.53.0",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "SQLite CLI 3.53.0 prebuilt for Windows and modern Linux; RHEL 8 uses the system RPM (3.26.0) due to GLIBC 2.28 constraint.",
+  "setup": "dev-tools/sqlite/setup.sh",
+  "receipt_name": "sqlite",
+  "estimate": "~15s",
+  "uses_prebuilt": true,
+  "sort_order": 54,
+  "source": "default"
+}
