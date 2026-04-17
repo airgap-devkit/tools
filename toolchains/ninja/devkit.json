@@ -1,0 +1,14 @@
+{
+  "id": "ninja",
+  "name": "Ninja",
+  "version": "1.13.2",
+  "category": "Toolchains",
+  "platform": "both",
+  "description": "Fast parallel build system. Used as the CMake generator for LLVM and gRPC builds.",
+  "setup": "toolchains/ninja/setup.sh",
+  "receipt_name": "ninja",
+  "estimate": "~5 sec",
+  "uses_prebuilt": true,
+  "sort_order": 11,
+  "check_cmd": "ninja --version"
+}

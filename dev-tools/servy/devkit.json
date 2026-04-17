@@ -1,10 +1,10 @@
 {
   "id": "servy",
   "name": "Servy",
-  "version": "7.8",
+  "version": "7.9",
   "category": "Developer Tools",
   "platform": "windows",
-  "description": "Servy 7.8 Windows service manager — portable prebuilt single file (~80 MB); exits gracefully on Linux.",
+  "description": "Lightweight Windows service manager for installing and supervising background processes.",
   "setup": "dev-tools/servy/setup.sh",
   "receipt_name": "servy",
   "estimate": "~15s",

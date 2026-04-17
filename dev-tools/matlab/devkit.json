@@ -4,7 +4,7 @@
   "version": "N/A",
   "category": "Developer Tools",
   "platform": "both",
-  "description": "Checks that MATLAB is installed and required toolboxes (Database Toolbox, MATLAB Compiler) are licensed — does not install MATLAB.",
+  "description": "Verifies MATLAB installation and required toolbox licenses are present. Does not install MATLAB.",
   "setup": "dev-tools/matlab/setup.sh",
   "receipt_name": "matlab",
   "estimate": "~5s",

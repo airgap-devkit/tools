@@ -86,7 +86,7 @@ Each tool directory contains exactly one `devkit.json` with the following fields
 airgap-devkit-tools/
   toolchains/
     clang/
-      source-build/     devkit.json  (Clang / LLVM 22.1.2)
+      source-build/     devkit.json  (Clang / LLVM 22.1.3)
       style-formatter/  devkit.json  (LLVM Style Formatter)
     gcc/
       windows/          devkit.json  (GCC + MinGW-w64 15.2.0)
@@ -100,11 +100,11 @@ airgap-devkit-tools/
     python/             devkit.json  (Python 3.14.4)
     dotnet/             devkit.json  (.NET SDK 10.0.201)
   frameworks/
-    grpc/               devkit.json  (gRPC 1.78.1)
+    grpc/               devkit.json  (gRPC 1.80.0)
   dev-tools/
     7zip/               devkit.json  (7-Zip 26.00)
-    servy/              devkit.json  (Servy 7.8)
-    conan/              devkit.json  (Conan 2.27.0)
+    servy/              devkit.json  (Servy 7.9)
+    conan/              devkit.json  (Conan 2.27.1)
     vscode-extensions/  devkit.json  (VS Code Extensions)
     sqlite/             devkit.json  (SQLite CLI)
     matlab/             devkit.json  (MATLAB Verification)

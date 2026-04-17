@@ -1,0 +1,15 @@
+{
+  "id": "clang-style-formatter",
+  "name": "LLVM Style Formatter",
+  "version": "22.1.3",
+  "category": "Toolchains",
+  "platform": "both",
+  "description": "Automatically enforces LLVM C++ code style on every commit via a Git pre-commit hook.",
+  "setup": "toolchains/llvm/style-formatter/bootstrap.sh",
+  "receipt_name": "clang-style-formatter",
+  "estimate": "~30s",
+  "uses_prebuilt": true,
+  "sort_order": 11,
+  "source": "default",
+  "check_cmd": "clang-format --version"
+}

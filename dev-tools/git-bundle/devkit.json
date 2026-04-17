@@ -4,7 +4,7 @@
   "version": "N/A",
   "category": "Developer Tools",
   "platform": "both",
-  "description": "Transfers Git repositories with nested submodules across air-gapped boundaries — pure Python, no third-party dependencies.",
+  "description": "Transfers Git repositories with nested submodules across air-gapped network boundaries.",
   "setup": "dev-tools/git-bundle/setup.sh",
   "receipt_name": "git-bundle",
   "estimate": "~15s",

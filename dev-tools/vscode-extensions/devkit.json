@@ -4,11 +4,12 @@
   "version": "various",
   "category": "Developer Tools",
   "platform": "both",
-  "description": "Offline VS Code extension pack — cpptools, Catch2 test adapter, Python extension; per-platform .vsix files for win32-x64 and linux-x64.",
+  "description": "Offline bundle of essential VS Code extensions for C++ development, unit testing, and Python.",
   "setup": "dev-tools/vscode-extensions/setup.sh",
   "receipt_name": "vscode-extensions",
   "estimate": "~30s",
   "uses_prebuilt": true,
   "sort_order": 53,
-  "source": "default"
+  "source": "default",
+  "check_cmd": "code --version"
 }

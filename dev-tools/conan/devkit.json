@@ -1,14 +1,15 @@
 {
   "id": "conan",
   "name": "Conan",
-  "version": "2.27.0",
+  "version": "2.27.1",
   "category": "Developer Tools",
   "platform": "both",
-  "description": "Conan 2.27.0 C/C++ package manager — self-contained executables for Windows x64 and Linux x86_64, no Python required.",
+  "description": "Decentralized C/C++ package manager for managing dependencies and reproducible build configurations.",
   "setup": "dev-tools/conan/setup.sh",
   "receipt_name": "conan",
   "estimate": "~15s",
   "uses_prebuilt": true,
   "sort_order": 52,
-  "source": "default"
+  "source": "default",
+  "check_cmd": "conan --version"
 }

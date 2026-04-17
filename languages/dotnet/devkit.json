@@ -1,14 +1,15 @@
 {
   "id": "dotnet",
   "name": ".NET SDK",
-  "version": "10.0.201",
+  "version": "10.0.202",
   "category": "Languages",
   "platform": "both",
-  "description": "Portable .NET 10 SDK — Windows x64 (.zip, 6 parts) and Linux x64 (.tar.gz, 6 parts); no installer or registry changes required.",
+  "description": "Cross-platform SDK for building and running .NET applications in C#, F#, and Visual Basic.",
   "setup": "languages/dotnet/setup.sh",
   "receipt_name": "dotnet",
   "estimate": "~1 min",
   "uses_prebuilt": true,
   "sort_order": 31,
-  "source": "default"
+  "source": "default",
+  "check_cmd": "dotnet --version"
 }

@@ -13,8 +13,8 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **Clang / LLVM (source build)** | 22.1.2 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
-| **LLVM Style Formatter** | 22.1.2 | Windows + Linux | Yes | `toolchains/clang/style-formatter/` |
+| **Clang / LLVM (source build)** | 22.1.3 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
+| **LLVM Style Formatter** | 22.1.3 | Windows + Linux | Yes | `toolchains/clang/style-formatter/` |
 | **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `toolchains/gcc/windows/` |
 | **GCC Native (RHEL 8)** | 15 | RHEL 8 | Yes | `toolchains/gcc/linux/native/` |
 | **GCC Cross (x86_64-bionic)** | 15 | Linux | Yes | `toolchains/gcc/linux/cross/` |
@@ -43,7 +43,7 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.78.1 | Windows | Yes (.zip, 4 parts) | `frameworks/grpc/` |
+| **gRPC** | 1.80.0 | Windows | Yes (.zip, 4 parts) | `frameworks/grpc/` |
 
 ---
 
@@ -52,8 +52,8 @@ All tools target air-gapped environments — no internet access required at inst
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **7-Zip** | 26.00 | Windows + Linux | Yes | `dev-tools/7zip/` |
-| **Servy** | 7.8 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
-| **Conan** | 2.27.0 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
+| **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
+| **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
 | **VS Code Extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.0 (Win/Linux) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `dev-tools/sqlite/` |
 | **MATLAB Verification** | N/A | Windows + Linux | — (checks existing install) | `dev-tools/matlab/` |
@@ -74,10 +74,10 @@ All tools target air-gapped environments — no internet access required at inst
 | lcov 2.4 | — | Yes | Linux / RHEL 8 only |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
-| gRPC 1.78.1 | Yes | — | Windows MSVC build only |
+| gRPC 1.80.0 | Yes | — | Windows MSVC build only |
 | 7-Zip 26.00 | Yes | Yes | Admin + user install |
-| Servy 7.8 | Yes | — | Windows only, graceful no-op on Linux |
-| Conan 2.27.0 | Yes | Yes | Self-contained, no Python required |
+| Servy 7.9 | Yes | — | Windows only, graceful no-op on Linux |
+| Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code Extensions | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
 | MATLAB Verification | Yes | Yes | Checks existing install only |

@@ -4,11 +4,12 @@
   "version": "4.3.1",
   "category": "Build Tools",
   "platform": "both",
-  "description": "CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64 — both files under 100 MB, no split required.",
+  "description": "Cross-platform build system generator that manages the compilation process in a compiler-independent manner.",
   "setup": "build-tools/cmake/setup.sh",
   "receipt_name": "cmake",
   "estimate": "~30s",
   "uses_prebuilt": true,
   "sort_order": 20,
-  "source": "default"
+  "source": "default",
+  "check_cmd": "cmake --version"
 }

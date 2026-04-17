@@ -1,0 +1,14 @@
+{
+  "id": "gcc",
+  "name": "GCC",
+  "version": "15.2.0",
+  "category": "Toolchains",
+  "platform": "both",
+  "description": "GNU Compiler Collection. Windows: WinLibs GCC 15.2.0 MinGW-w64 UCRT. Linux: gcc-toolset-15 RPMs for RHEL 8 (includes gcov, gdb).",
+  "setup": "toolchains/gcc/setup.sh",
+  "receipt_name": "gcc",
+  "estimate": "~3 min",
+  "uses_prebuilt": true,
+  "sort_order": 12,
+  "check_cmd": "gcc --version"
+}
