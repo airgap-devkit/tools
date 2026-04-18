@@ -7,10 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/sqlite/${VERSION}"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
     ARCHIVE="sqlite-tools-${VERSION}-windows-x64.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/sqlite"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/sqlite"
 else
     PLATFORM="linux"
     if [[ "$(id -u)" == "0" ]]; then
@@ -38,6 +38,9 @@ RECEIPT
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
 
 echo "==> Installing SQLite CLI ${VERSION} (${PLATFORM}) to ${PREFIX}/bin"
@@ -46,7 +49,12 @@ if [[ ! -f "$ARCHIVE_PATH" ]]; then
     echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
 fi
 
-mkdir -p "$PREFIX/bin"
+if [[ "$PLATFORM" == "windows" ]]; then
+    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "${PREFIX}\\bin" 2>/dev/null || true
+    PREFIX="$(cygpath -u -- "$PREFIX")"
+else
+    mkdir -p "$PREFIX/bin"
+fi
 tar -xJf "$ARCHIVE_PATH" -C "$PREFIX/bin" --strip-components=0
 
 cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT

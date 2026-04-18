@@ -30,13 +30,10 @@ TOOL_NAME="grpc-${VERSION}"
 # ---------------------------------------------------------------------------
 # Windows only
 # ---------------------------------------------------------------------------
-case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*) ;;
-    *)
-        echo "  [--] gRPC prebuilt is Windows only. Nothing to do."
-        exit 0
-        ;;
-esac
+if ! [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+    echo "  [--] gRPC prebuilt is Windows only. Nothing to do."
+    exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # Rebuild flag
@@ -50,7 +47,7 @@ done
 # install-mode setup
 # ---------------------------------------------------------------------------
 source "${REPO_ROOT}/scripts/install-mode.sh"
-install_mode_init "${TOOL_NAME}" "${VERSION}"
+install_mode_init "${TOOL_NAME}" "${VERSION}" "$@"
 install_log_capture_start
 
 # ---------------------------------------------------------------------------
@@ -85,7 +82,9 @@ fi
 # ---------------------------------------------------------------------------
 # Extract
 # ---------------------------------------------------------------------------
-mkdir -p "${INSTALL_PREFIX}"
+MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "${INSTALL_PREFIX}" 2>/dev/null || true
+INSTALL_PREFIX="$(cygpath -u -- "${INSTALL_PREFIX}")"
+export INSTALL_PREFIX
 
 im_progress_start "Extracting to ${INSTALL_PREFIX}"
 tar -xJf "${ARCHIVE}" -C "${INSTALL_PREFIX}"

@@ -7,10 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../../.." && pwd)/prebuilt}"
 
 # Detect platform
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
     ARCHIVE="clang+llvm-${VERSION}-x86_64-pc-windows-msvc.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/clang-llvm"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/clang-llvm"
 else
     PLATFORM="linux"
     ARCHIVE="LLVM-${VERSION}-Linux-X64.tar.xz"
@@ -22,6 +22,9 @@ else
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 PARTS_DIR="$PREBUILT_DIR/toolchains/llvm/${VERSION}"
 
 echo "==> Installing LLVM/Clang ${VERSION} (${PLATFORM}) to ${PREFIX}"
@@ -40,7 +43,12 @@ if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
 fi
 echo "    Found ${#PARTS[@]} parts."
 
-mkdir -p "$PREFIX"
+if [[ "$PLATFORM" == "windows" ]]; then
+    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
+    PREFIX="$(cygpath -u -- "$PREFIX")"
+else
+    mkdir -p "$PREFIX"
+fi
 
 echo "    Reassembling and extracting (this may take a moment)..."
 cat "${PARTS[@]}" | tar -xJ --strip-components=1 -C "$PREFIX"

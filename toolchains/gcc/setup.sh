@@ -5,11 +5,11 @@ TOOL="gcc"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../../.." && pwd)/prebuilt}"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
     VERSION="15.2.0"
     ARCHIVE="winlibs-x86_64-posix-seh-gcc-${VERSION}-mingw-w64ucrt-14.0.0-r7.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/winlibs-gcc-ucrt"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/winlibs-gcc-ucrt"
 else
     PLATFORM="linux"
     VERSION="toolset-15"
@@ -17,6 +17,9 @@ else
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 PARTS_DIR="$PREBUILT_DIR/toolchains/gcc/${PLATFORM}"
 
 echo "==> Installing GCC ${VERSION} (${PLATFORM})"
@@ -33,7 +36,8 @@ if [[ "$PLATFORM" == "windows" ]]; then
         exit 1
     fi
     echo "    Found ${#PARTS[@]} parts. Extracting to ${PREFIX}..."
-    mkdir -p "$PREFIX"
+    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
+    PREFIX="$(cygpath -u -- "$PREFIX")"
     cat "${PARTS[@]}" | tar -xJ --strip-components=1 -C "$PREFIX"
 
     cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT

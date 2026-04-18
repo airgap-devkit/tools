@@ -7,10 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/conan/${VERSION}"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
     ARCHIVE="conan-${VERSION}-windows-x86_64.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/conan"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/conan"
 else
     PLATFORM="linux"
     if [[ "$(id -u)" == "0" ]]; then
@@ -21,6 +21,9 @@ else
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 
 echo "==> Installing Conan ${VERSION} (${PLATFORM}) to ${PREFIX}"
 
@@ -29,7 +32,8 @@ if [[ "$PLATFORM" == "windows" ]]; then
     if [[ ! -f "$ARCHIVE_PATH" ]]; then
         echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
     fi
-    mkdir -p "$PREFIX"
+    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
+    PREFIX="$(cygpath -u -- "$PREFIX")"
     tar -xJf "$ARCHIVE_PATH" -C "$PREFIX" --strip-components=0
 else
     DEB="$PARTS_DIR/conan-${VERSION}-amd64.deb"

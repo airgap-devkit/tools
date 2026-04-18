@@ -7,10 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/languages/dotnet/${VERSION}"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
     ARCHIVE="dotnet-sdk-${VERSION}-win-x64.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/dotnet"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/dotnet"
 else
     PLATFORM="linux"
     ARCHIVE="dotnet-sdk-${VERSION}-linux-x64.tar.xz"
@@ -22,6 +22,9 @@ else
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 
 echo "==> Installing .NET SDK ${VERSION} (${PLATFORM}) to ${PREFIX}"
 
@@ -35,7 +38,12 @@ if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
 fi
 echo "    Found ${#PARTS[@]} parts."
 
-mkdir -p "$PREFIX"
+if [[ "$PLATFORM" == "windows" ]]; then
+    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
+    PREFIX="$(cygpath -u -- "$PREFIX")"
+else
+    mkdir -p "$PREFIX"
+fi
 cat "${PARTS[@]}" | tar -xJ -C "$PREFIX"
 
 # Wire DOTNET_ROOT for the current session

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # lcov is Linux-only
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     echo "lcov is a Linux-only tool. Skipping on Windows." >&2
     exit 0
 fi
@@ -19,6 +19,9 @@ else
     DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/lcov"
 fi
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 
 RPM="$PREBUILT_DIR/toolchains/lcov/${VERSION}/lcov-${VERSION}-0.noarch.rpm"
 SOURCE_ARCHIVE="$PREBUILT_DIR/toolchains/lcov/${VERSION}/lcov-${VERSION}.tar.xz"

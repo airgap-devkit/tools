@@ -7,9 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/7zip/${VERSION}"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/7zip"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/7zip"
 else
     PLATFORM="linux"
     if [[ "$(id -u)" == "0" ]]; then
@@ -20,10 +20,18 @@ else
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
 
 echo "==> Installing 7-Zip ${VERSION} (${PLATFORM}) to ${PREFIX}"
 
-mkdir -p "$PREFIX/bin"
+if [[ "$PLATFORM" == "windows" ]]; then
+    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "${PREFIX}\\bin" 2>/dev/null || true
+    PREFIX="$(cygpath -u -- "$PREFIX")"
+else
+    mkdir -p "$PREFIX/bin"
+fi
 
 if [[ "$PLATFORM" == "windows" ]]; then
     INSTALLER="$PARTS_DIR/7z${VERSION/./}-x64.exe"
