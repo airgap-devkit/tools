@@ -9,10 +9,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 SOURCE_ARCHIVE="$SOURCES_DIR/ninja-${VERSION}-src.tar.xz"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]] || command -v cmd.exe &>/dev/null 2>&1; then
     PLATFORM="windows"
     BINARY="ninja.exe"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/ninja"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/ninja"
 else
     PLATFORM="linux"
     BINARY="ninja"

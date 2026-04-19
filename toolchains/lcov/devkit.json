@@ -5,7 +5,7 @@
   "category": "Toolchains",
   "platform": "linux",
   "description": "Code coverage report generator frontend for gcov. Produces HTML reports. Requires gcov (from gcc-toolset).",
-  "setup": "toolchains/lcov/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "lcov",
   "estimate": "~10 sec",
   "uses_prebuilt": true,

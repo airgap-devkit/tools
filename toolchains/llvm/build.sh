@@ -11,9 +11,9 @@ SOURCES_DIR="$SCRIPT_DIR/sources"
 # Components to build — minimal set needed for devkit
 LLVM_COMPONENTS="clang;clang-tools-extra;lld"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]] || command -v cmd.exe &>/dev/null 2>&1; then
     PLATFORM="windows"
-    DEFAULT_PREFIX="${LOCALAPPDATA}/airgap-cpp-devkit/clang-llvm"
+    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/clang-llvm"
     CMAKE_GENERATOR="Ninja"
 else
     PLATFORM="linux"

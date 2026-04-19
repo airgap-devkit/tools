@@ -5,7 +5,7 @@
   "category": "Languages",
   "platform": "both",
   "description": "Portable Python runtime for scripting, automation, and development. Includes 19 vendored pip packages.",
-  "setup": "languages/python/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "python",
   "estimate": "~1 min",
   "uses_prebuilt": true,

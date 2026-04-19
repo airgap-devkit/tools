@@ -5,7 +5,7 @@
   "category": "Toolchains",
   "platform": "both",
   "description": "Fast parallel build system. Used as the CMake generator for LLVM and gRPC builds.",
-  "setup": "toolchains/ninja/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "ninja",
   "estimate": "~5 sec",
   "uses_prebuilt": true,

@@ -5,7 +5,7 @@
   "category": "Developer Tools",
   "platform": "both",
   "description": "Verifies MATLAB installation and required toolbox licenses are present. Does not install MATLAB.",
-  "setup": "dev-tools/matlab/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "matlab",
   "estimate": "~5s",
   "uses_prebuilt": false,

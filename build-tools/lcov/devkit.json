@@ -5,7 +5,7 @@
   "category": "Build Tools",
   "platform": "linux",
   "description": "Graphical front-end for GCC's gcov tool that generates HTML reports of C/C++ test coverage.",
-  "setup": "build-tools/lcov/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "lcov",
   "estimate": "~2 min",
   "uses_prebuilt": true,

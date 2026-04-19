@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 SOURCE_ARCHIVE="$SOURCES_DIR/gcc-${VERSION}.tar.xz"
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OS" == "Windows_NT" ]]; then
+if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]] || command -v cmd.exe &>/dev/null 2>&1; then
     echo "ERROR: GCC source build is not supported on Windows." >&2
     echo "       Use setup.sh to install the WinLibs prebuilt instead." >&2
     exit 1

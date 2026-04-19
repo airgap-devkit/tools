@@ -5,7 +5,7 @@
   "category": "Languages",
   "platform": "both",
   "description": "Cross-platform SDK for building and running .NET applications in C#, F#, and Visual Basic.",
-  "setup": "languages/dotnet/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "dotnet",
   "estimate": "~1 min",
   "uses_prebuilt": true,

@@ -5,7 +5,7 @@
   "category": "Toolchains",
   "platform": "both",
   "description": "LLVM/Clang compiler toolchain. Includes clang, clang++, clang-format, clang-tidy, lld, and LLVM tools.",
-  "setup": "toolchains/llvm/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "clang-llvm",
   "estimate": "~3 min",
   "uses_prebuilt": true,

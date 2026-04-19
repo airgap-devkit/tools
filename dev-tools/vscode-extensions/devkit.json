@@ -5,7 +5,7 @@
   "category": "Developer Tools",
   "platform": "both",
   "description": "Offline bundle of essential VS Code extensions for C++ development, unit testing, and Python.",
-  "setup": "dev-tools/vscode-extensions/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "vscode-extensions",
   "estimate": "~30s",
   "uses_prebuilt": true,

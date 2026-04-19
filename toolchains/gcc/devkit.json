@@ -5,7 +5,7 @@
   "category": "Toolchains",
   "platform": "both",
   "description": "GNU Compiler Collection. Windows: WinLibs GCC 15.2.0 MinGW-w64 UCRT. Linux: gcc-toolset-15 RPMs for RHEL 8 (includes gcov, gdb).",
-  "setup": "toolchains/gcc/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "gcc",
   "estimate": "~3 min",
   "uses_prebuilt": true,

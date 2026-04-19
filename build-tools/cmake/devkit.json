@@ -5,7 +5,7 @@
   "category": "Build Tools",
   "platform": "both",
   "description": "Cross-platform build system generator that manages the compilation process in a compiler-independent manner.",
-  "setup": "build-tools/cmake/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "cmake",
   "estimate": "~30s",
   "uses_prebuilt": true,

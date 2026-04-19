@@ -5,7 +5,7 @@
   "category": "Developer Tools",
   "platform": "windows",
   "description": "Lightweight Windows service manager for installing and supervising background processes.",
-  "setup": "dev-tools/servy/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "servy",
   "estimate": "~15s",
   "uses_prebuilt": true,

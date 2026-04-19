@@ -5,7 +5,7 @@
   "category": "Developer Tools",
   "platform": "both",
   "description": "Decentralized C/C++ package manager for managing dependencies and reproducible build configurations.",
-  "setup": "dev-tools/conan/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "conan",
   "estimate": "~15s",
   "uses_prebuilt": true,

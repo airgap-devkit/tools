@@ -5,7 +5,7 @@
   "category": "Frameworks",
   "platform": "windows",
   "description": "High-performance RPC framework for building distributed C++ services using Protocol Buffers.",
-  "setup": "frameworks/grpc/setup.sh",
+  "setup": "setup.sh",
   "receipt_name": "grpc",
   "estimate": "~1 min (prebuilt) / ~40 min (source)",
   "uses_prebuilt": true,

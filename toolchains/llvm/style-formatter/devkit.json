@@ -5,7 +5,7 @@
   "category": "Toolchains",
   "platform": "both",
   "description": "Automatically enforces LLVM C++ code style on every commit via a Git pre-commit hook.",
-  "setup": "toolchains/llvm/style-formatter/bootstrap.sh",
+  "setup": "bootstrap.sh",
   "receipt_name": "clang-style-formatter",
   "estimate": "~30s",
   "uses_prebuilt": true,
