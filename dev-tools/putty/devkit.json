@@ -1,0 +1,15 @@
+{
+  "id": "putty",
+  "name": "PuTTY",
+  "version": "0.83",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "SSH, Telnet, and serial console client. Windows: full GUI installer. Linux: CLI tools (plink, pscp, psftp, puttygen) built from source.",
+  "setup": "setup.sh",
+  "receipt_name": "putty",
+  "estimate": "~15s (Windows) / ~5 min (Linux source build)",
+  "uses_prebuilt": true,
+  "sort_order": 58,
+  "source": "default",
+  "check_cmd": "plink --version 2>&1 | head -1 || putty --version 2>&1 | head -1"
+}

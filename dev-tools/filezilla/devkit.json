@@ -1,0 +1,15 @@
+{
+  "id": "filezilla",
+  "name": "FileZilla",
+  "version": "3.70.4",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Cross-platform FTP, FTPS, and SFTP client for transferring files to/from remote servers.",
+  "setup": "setup.sh",
+  "receipt_name": "filezilla",
+  "estimate": "~30s",
+  "uses_prebuilt": true,
+  "sort_order": 55,
+  "source": "default",
+  "check_cmd": "filezilla --version 2>&1 | head -1"
+}

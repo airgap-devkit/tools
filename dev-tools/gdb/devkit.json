@@ -1,0 +1,15 @@
+{
+  "id": "gdb",
+  "name": "GDB",
+  "version": "17.1",
+  "category": "Developer Tools",
+  "platform": "linux",
+  "description": "GNU Project Debugger — source-level debugger for C, C++, and other languages. Built from source on Linux.",
+  "setup": "setup.sh",
+  "receipt_name": "gdb",
+  "estimate": "~25 min",
+  "uses_prebuilt": false,
+  "sort_order": 56,
+  "source": "default",
+  "check_cmd": "gdb --version 2>&1 | head -1"
+}

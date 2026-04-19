@@ -1,0 +1,15 @@
+{
+  "id": "notepadpp",
+  "name": "Notepad++",
+  "version": "8.9.3",
+  "category": "Developer Tools",
+  "platform": "windows",
+  "description": "Lightweight source code editor for Windows with syntax highlighting, multi-tab editing, and plugin support.",
+  "setup": "setup.sh",
+  "receipt_name": "notepadpp",
+  "estimate": "~15s",
+  "uses_prebuilt": true,
+  "sort_order": 57,
+  "source": "default",
+  "check_cmd": "notepad++.exe --help 2>&1 | head -1 || true"
+}

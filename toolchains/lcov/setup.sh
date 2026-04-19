@@ -10,7 +10,7 @@ fi
 TOOL="lcov"
 VERSION="2.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../../.." && pwd)/prebuilt}"
+PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 
 if [[ "$(id -u)" == "0" ]]; then

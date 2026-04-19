@@ -1,0 +1,15 @@
+{
+  "id": "sourcetree",
+  "name": "SourceTree",
+  "version": "3.4.30",
+  "category": "Developer Tools",
+  "platform": "windows",
+  "description": "Free Git and Mercurial desktop GUI client for Windows with a visual commit graph and branch management.",
+  "setup": "setup.sh",
+  "receipt_name": "sourcetree",
+  "estimate": "~1 min",
+  "uses_prebuilt": true,
+  "sort_order": 59,
+  "source": "default",
+  "check_cmd": "sourcetree.exe --version 2>&1 | head -1 || true"
+}
