@@ -45,11 +45,12 @@ else
     elif command -v rpm &>/dev/null; then
         # RHEL 8: install via pip from the Windows zip fallback is not available
         # Extract conan binary from .deb manually
-        mkdir -p /tmp/conan_deb "$PREFIX/bin"
-        dpkg-deb --extract "$DEB" /tmp/conan_deb 2>/dev/null || ar x "$DEB" --output=/tmp/conan_deb
-        find /tmp/conan_deb -name "conan" -type f -exec cp {} "$PREFIX/bin/" \;
+        mkdir -p "$PREFIX/bin"
+        _tmp_deb="$(mktemp -d)"
+        trap 'rm -rf "$_tmp_deb"' EXIT
+        dpkg-deb --extract "$DEB" "$_tmp_deb" 2>/dev/null || ar x "$DEB" --output="$_tmp_deb"
+        find "$_tmp_deb" -name "conan" -type f -exec cp {} "$PREFIX/bin/" \;
         chmod +x "$PREFIX/bin/conan"
-        rm -rf /tmp/conan_deb
     else
         echo "ERROR: Neither dpkg nor rpm found. Cannot install .deb on this system." >&2
         exit 1
