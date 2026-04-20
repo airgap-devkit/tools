@@ -36,8 +36,16 @@ if [[ "$PLATFORM" == "windows" ]]; then
     if [[ ! -f "$INSTALLER" ]]; then
         echo "ERROR: Installer not found: $INSTALLER" >&2; exit 1
     fi
+    INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
     PREFIX_WIN="$(cygpath -w "$PREFIX")"
-    MSYS_NO_PATHCONV=1 msiexec /i "$(cygpath -w "$INSTALLER")" /quiet /qn INSTALLDIR="${PREFIX_WIN}\\"
+    # MSYS_NO_PATHCONV=1 prevents Git Bash from re-mangling the Windows paths
+    # that cygpath already produced, avoiding msiexec ERROR_BAD_NET_NAME (exit 67)
+    MSYS_NO_PATHCONV=1 msiexec.exe /i "${INSTALLER_WIN}" /quiet /qn \
+        "INSTALLDIR=${PREFIX_WIN}\\" || {
+        echo "ERROR: msiexec.exe failed (exit $?)." >&2
+        echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
+        exit 1
+    }
 else
     # Linux: build CLI tools from source (no GTK required)
     SOURCE_ARCHIVE="$SCRIPT_DIR/sources/putty-${VERSION}.tar.gz"
