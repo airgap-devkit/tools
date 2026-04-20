@@ -37,24 +37,30 @@ if [[ "$PLATFORM" == "windows" ]]; then
         echo "ERROR: Installer not found: $INSTALLER" >&2; exit 1
     fi
     INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
-    PREFIX_WIN="$(cygpath -w "$PREFIX")"
-    # Use PowerShell Start-Process -Wait so we block until msiexec and ALL its
-    # child processes finish.  Calling msiexec via "&" or cmd /c returns
-    # immediately because msiexec spawns a 64-bit host process; -Wait handles that.
+    echo "==> Installer: ${INSTALLER_WIN}"
     export _PUTTY_MSI="$INSTALLER_WIN"
-    export _PUTTY_DIR="${PREFIX_WIN}\\"
+    # Use PowerShell Start-Process -Wait to block until msiexec + all child
+    # processes finish.  set +e so bash doesn't exit on a non-zero RC before
+    # we can capture it.  INSTALLDIR omitted — some MSI versions reject it
+    # with ERROR_BAD_NET_NAME (67); PuTTY installs to its default path and
+    # the receipt below is always written to our custom PREFIX.
+    set +e
     powershell.exe -NoProfile -NonInteractive -Command '
         $p = Start-Process msiexec.exe `
-            -ArgumentList @("/i", $env:_PUTTY_MSI, "/quiet", "/qn", "INSTALLDIR=$($env:_PUTTY_DIR)") `
-            -Wait -PassThru -WindowStyle Hidden
+            -ArgumentList @("/i", $env:_PUTTY_MSI, "/quiet", "/qn", "/norestart") `
+            -Wait -PassThru
         exit $p.ExitCode
     '
     RC=$?
-    unset _PUTTY_MSI _PUTTY_DIR
-    if [[ $RC -ne 0 ]]; then
+    set -e
+    unset _PUTTY_MSI
+    if [[ $RC -ne 0 && $RC -ne 3010 ]]; then
         echo "ERROR: msiexec.exe failed (exit $RC)." >&2
         echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
         exit 1
+    fi
+    if [[ $RC -eq 3010 ]]; then
+        echo "==> Note: Installation succeeded (restart may be required)"
     fi
 else
     # Linux: build CLI tools from source (no GTK required)
