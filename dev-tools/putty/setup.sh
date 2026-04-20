@@ -39,31 +39,59 @@ if [[ "$PLATFORM" == "windows" ]]; then
     INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
     MSI_LOG_POSIX="$(mktemp --suffix=.log)"
     MSI_LOG_WIN="$(cygpath -w "$MSI_LOG_POSIX")"
-    echo "==> Installer : ${INSTALLER_WIN}"
-    echo "==> MSI log   : ${MSI_LOG_WIN}"
 
-    # Invoke via cmd.exe so MSYS never touches the msiexec arguments.
-    # "start /wait" makes cmd.exe block until msiexec AND its service child
-    # all exit.  set +e so bash doesn't abort before we capture RC.
+    echo "==> Installer : ${INSTALLER_WIN}"
+    echo "==> Command   : msiexec.exe /i \"${INSTALLER_WIN}\" /quiet /qn /norestart /L*V \"${MSI_LOG_WIN}\""
+
+    # Background cmd.exe so we can simultaneously tail the MSI log.
+    # start /wait makes cmd.exe block until msiexec + its service child exit.
     set +e
-    cmd.exe //c "start /wait \"\" msiexec.exe /i \"${INSTALLER_WIN}\" /quiet /qn /norestart /L*V \"${MSI_LOG_WIN}\""
+    cmd.exe //c "start /wait \"\" msiexec.exe /i \"${INSTALLER_WIN}\" /quiet /qn /norestart /L*V \"${MSI_LOG_WIN}\"" &
+    INSTALL_PID=$!
+
+    # Wait up to 10 s for the MSI log file to be created by the installer
+    echo "==> Waiting for Windows Installer to start..."
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 1
+        [[ -f "$MSI_LOG_POSIX" ]] && { echo "==> Streaming installer actions..."; break; }
+        echo "  (${i}s — waiting for log)"
+    done
+
+    # Stream filtered MSI log lines in real time while the installer runs
+    LOG_BYTES=0
+    while kill -0 "$INSTALL_PID" 2>/dev/null; do
+        if [[ -f "$MSI_LOG_POSIX" ]]; then
+            CUR=$(wc -c < "$MSI_LOG_POSIX" 2>/dev/null || echo 0)
+            if [[ "$CUR" -gt "$LOG_BYTES" ]]; then
+                tail -c +$((LOG_BYTES + 1)) "$MSI_LOG_POSIX" \
+                    | tr -d '\r' \
+                    | grep -E "^(Action start|MSI \(s\).*Note:|Return Value [^1]|Error [0-9])" \
+                    | sed 's/^Action start [0-9:]*: /  step: /' \
+                    | sed 's/^MSI (s)[^:]*Note: /  note: /' \
+                    || true
+                LOG_BYTES=$CUR
+            fi
+        fi
+        sleep 1
+    done
+
+    wait "$INSTALL_PID"
     RC=$?
     set -e
 
-    # Print the MSI verbose log so the console shows what really happened
-    if [[ -f "$MSI_LOG_POSIX" ]]; then
-        echo "==> MSI log:"
-        tr -d '\r' < "$MSI_LOG_POSIX" \
-            | grep -E "^(Installation|Product|Return Value|Error|MSI \(s\)|Action start)" \
-            | tail -30
-        rm -f "$MSI_LOG_POSIX"
-    fi
-
+    # On failure, show the last errors from the log for diagnosis
     if [[ $RC -ne 0 && $RC -ne 3010 ]]; then
+        if [[ -f "$MSI_LOG_POSIX" ]]; then
+            echo "==> Last MSI log errors:"
+            tr -d '\r' < "$MSI_LOG_POSIX" \
+                | grep -E "(Error|Return Value [^1]|Note:)" | tail -15
+        fi
+        rm -f "$MSI_LOG_POSIX"
         echo "ERROR: msiexec.exe failed (exit $RC)." >&2
         echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
         exit 1
     fi
+    rm -f "$MSI_LOG_POSIX"
     [[ $RC -eq 3010 ]] && echo "==> Note: restart may be required (exit 3010)"
 else
     # Linux: build CLI tools from source (no GTK required)
