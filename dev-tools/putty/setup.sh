@@ -37,23 +37,30 @@ if [[ "$PLATFORM" == "windows" ]]; then
         echo "ERROR: Installer not found: $INSTALLER" >&2; exit 1
     fi
     INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
-    echo "==> Installer: ${INSTALLER_WIN}"
-    export _PUTTY_MSI="$INSTALLER_WIN"
-    # Use PowerShell Start-Process -Wait to block until msiexec + all child
-    # processes finish.  set +e so bash doesn't exit on a non-zero RC before
-    # we can capture it.  INSTALLDIR omitted — some MSI versions reject it
-    # with ERROR_BAD_NET_NAME (67); PuTTY installs to its default path and
-    # the receipt below is always written to our custom PREFIX.
+    MSI_LOG_WIN="$(cygpath -w "$(mktemp --suffix=.log)")"
+    echo "==> Installer : ${INSTALLER_WIN}"
+    echo "==> MSI log   : ${MSI_LOG_WIN}"
+
+    # Call msiexec.exe directly from bash (MINGW64 is 64-bit so there is no
+    # 32→64 child-process issue).  Use // prefix on switches so MSYS does not
+    # interpret them as POSIX paths.  set +e so set -euo pipefail doesn't exit
+    # before we can capture the return code.
     set +e
-    powershell.exe -NoProfile -NonInteractive -Command '
-        $p = Start-Process msiexec.exe `
-            -ArgumentList @("/i", $env:_PUTTY_MSI, "/quiet", "/qn", "/norestart") `
-            -Wait -PassThru
-        exit $p.ExitCode
-    '
+    MSYS2_ARG_CONV_EXCL='*' msiexec.exe \
+        //i "$INSTALLER_WIN" \
+        //quiet //qn //norestart \
+        "//L*V" "$MSI_LOG_WIN"
     RC=$?
     set -e
-    unset _PUTTY_MSI
+
+    # Show the MSI log regardless of outcome
+    MSI_LOG_POSIX="$(cygpath -u "$MSI_LOG_WIN" 2>/dev/null || echo "")"
+    if [[ -n "$MSI_LOG_POSIX" && -f "$MSI_LOG_POSIX" ]]; then
+        echo "==> MSI log output:"
+        cat "$MSI_LOG_POSIX" | tr -d '\r' | tail -40
+        rm -f "$MSI_LOG_POSIX"
+    fi
+
     if [[ $RC -ne 0 && $RC -ne 3010 ]]; then
         echo "ERROR: msiexec.exe failed (exit $RC)." >&2
         echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
