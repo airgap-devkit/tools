@@ -37,27 +37,25 @@ if [[ "$PLATFORM" == "windows" ]]; then
         echo "ERROR: Installer not found: $INSTALLER" >&2; exit 1
     fi
     INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
-    MSI_LOG_WIN="$(cygpath -w "$(mktemp --suffix=.log)")"
+    MSI_LOG_POSIX="$(mktemp --suffix=.log)"
+    MSI_LOG_WIN="$(cygpath -w "$MSI_LOG_POSIX")"
     echo "==> Installer : ${INSTALLER_WIN}"
     echo "==> MSI log   : ${MSI_LOG_WIN}"
 
-    # Call msiexec.exe directly from bash (MINGW64 is 64-bit so there is no
-    # 32→64 child-process issue).  Use // prefix on switches so MSYS does not
-    # interpret them as POSIX paths.  set +e so set -euo pipefail doesn't exit
-    # before we can capture the return code.
+    # Invoke via cmd.exe so MSYS never touches the msiexec arguments.
+    # "start /wait" makes cmd.exe block until msiexec AND its service child
+    # all exit.  set +e so bash doesn't abort before we capture RC.
     set +e
-    MSYS2_ARG_CONV_EXCL='*' msiexec.exe \
-        //i "$INSTALLER_WIN" \
-        //quiet //qn //norestart \
-        "//L*V" "$MSI_LOG_WIN"
+    cmd.exe //c "start /wait \"\" msiexec.exe /i \"${INSTALLER_WIN}\" /quiet /qn /norestart /L*V \"${MSI_LOG_WIN}\""
     RC=$?
     set -e
 
-    # Show the MSI log regardless of outcome
-    MSI_LOG_POSIX="$(cygpath -u "$MSI_LOG_WIN" 2>/dev/null || echo "")"
-    if [[ -n "$MSI_LOG_POSIX" && -f "$MSI_LOG_POSIX" ]]; then
-        echo "==> MSI log output:"
-        cat "$MSI_LOG_POSIX" | tr -d '\r' | tail -40
+    # Print the MSI verbose log so the console shows what really happened
+    if [[ -f "$MSI_LOG_POSIX" ]]; then
+        echo "==> MSI log:"
+        tr -d '\r' < "$MSI_LOG_POSIX" \
+            | grep -E "^(Installation|Product|Return Value|Error|MSI \(s\)|Action start)" \
+            | tail -30
         rm -f "$MSI_LOG_POSIX"
     fi
 
@@ -66,9 +64,7 @@ if [[ "$PLATFORM" == "windows" ]]; then
         echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
         exit 1
     fi
-    if [[ $RC -eq 3010 ]]; then
-        echo "==> Note: Installation succeeded (restart may be required)"
-    fi
+    [[ $RC -eq 3010 ]] && echo "==> Note: restart may be required (exit 3010)"
 else
     # Linux: build CLI tools from source (no GTK required)
     SOURCE_ARCHIVE="$SCRIPT_DIR/sources/putty-${VERSION}.tar.gz"

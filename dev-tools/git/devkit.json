@@ -1,0 +1,15 @@
+{
+  "id": "git",
+  "name": "Git",
+  "version": "2.53.0.3",
+  "category": "Developer Tools",
+  "platform": "windows",
+  "description": "Distributed version control system. Windows: full installer including Git Bash, Git GUI, and credential manager. Installs to a user-defined prefix via silent NSIS installer.",
+  "setup": "setup.sh",
+  "receipt_name": "git",
+  "estimate": "~30s",
+  "uses_prebuilt": true,
+  "sort_order": 51,
+  "source": "default",
+  "check_cmd": "git --version"
+}
