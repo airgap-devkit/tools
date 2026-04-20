@@ -38,14 +38,23 @@ if [[ "$PLATFORM" == "windows" ]]; then
     fi
     INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
     PREFIX_WIN="$(cygpath -w "$PREFIX")"
-    # MSYS_NO_PATHCONV=1 prevents Git Bash from re-mangling the Windows paths
-    # that cygpath already produced, avoiding msiexec ERROR_BAD_NET_NAME (exit 67)
-    MSYS_NO_PATHCONV=1 msiexec.exe /i "${INSTALLER_WIN}" /quiet /qn \
-        "INSTALLDIR=${PREFIX_WIN}\\" || {
-        echo "ERROR: msiexec.exe failed (exit $?)." >&2
+    # Use PowerShell to invoke msiexec — avoids all MSYS/MINGW path-mangling
+    # issues that cause ERROR_BAD_NET_NAME (exit 67) when calling msiexec directly.
+    export _PUTTY_MSI="$INSTALLER_WIN"
+    export _PUTTY_DIR="${PREFIX_WIN}\\"
+    powershell.exe -NoProfile -NonInteractive -Command '
+        $msiPath = $env:_PUTTY_MSI
+        $instDir = "INSTALLDIR=" + $env:_PUTTY_DIR
+        & msiexec.exe /i $msiPath /quiet /qn $instDir
+        exit $LASTEXITCODE
+    '
+    RC=$?
+    unset _PUTTY_MSI _PUTTY_DIR
+    if [[ $RC -ne 0 ]]; then
+        echo "ERROR: msiexec.exe failed (exit $RC)." >&2
         echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
         exit 1
-    }
+    fi
 else
     # Linux: build CLI tools from source (no GTK required)
     SOURCE_ARCHIVE="$SCRIPT_DIR/sources/putty-${VERSION}.tar.gz"
