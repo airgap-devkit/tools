@@ -38,15 +38,16 @@ if [[ "$PLATFORM" == "windows" ]]; then
     fi
     INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
     PREFIX_WIN="$(cygpath -w "$PREFIX")"
-    # Use PowerShell to invoke msiexec — avoids all MSYS/MINGW path-mangling
-    # issues that cause ERROR_BAD_NET_NAME (exit 67) when calling msiexec directly.
+    # Use PowerShell Start-Process -Wait so we block until msiexec and ALL its
+    # child processes finish.  Calling msiexec via "&" or cmd /c returns
+    # immediately because msiexec spawns a 64-bit host process; -Wait handles that.
     export _PUTTY_MSI="$INSTALLER_WIN"
     export _PUTTY_DIR="${PREFIX_WIN}\\"
     powershell.exe -NoProfile -NonInteractive -Command '
-        $msiPath = $env:_PUTTY_MSI
-        $instDir = "INSTALLDIR=" + $env:_PUTTY_DIR
-        & msiexec.exe /i $msiPath /quiet /qn $instDir
-        exit $LASTEXITCODE
+        $p = Start-Process msiexec.exe `
+            -ArgumentList @("/i", $env:_PUTTY_MSI, "/quiet", "/qn", "INSTALLDIR=$($env:_PUTTY_DIR)") `
+            -Wait -PassThru -WindowStyle Hidden
+        exit $p.ExitCode
     '
     RC=$?
     unset _PUTTY_MSI _PUTTY_DIR
