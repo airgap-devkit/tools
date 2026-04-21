@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 51,
   "source": "default",
-  "check_cmd": "git --version"
+  "check_cmd": "git --version",
+  "github_repo": "git-for-windows/git",
+  "asset_match": "64-bit.exe"
 }
