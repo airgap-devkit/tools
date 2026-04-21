@@ -10,5 +10,6 @@
   "estimate": "~15s",
   "uses_prebuilt": true,
   "sort_order": 51,
-  "source": "default"
+  "source": "default",
+  "check_cmd": "Servy --version"
 }
