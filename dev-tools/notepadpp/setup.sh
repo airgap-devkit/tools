@@ -10,37 +10,23 @@ fi
 TOOL="notepadpp"
 VERSION="8.9.3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
-PARTS_DIR="$PREBUILT_DIR/dev-tools/notepadpp/${VERSION}"
-PORTABLE_ZIP="$PARTS_DIR/npp.${VERSION}.portable.x64.zip"
-DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/notepadpp"
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
-done
+source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
+
+PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix notepadpp)}"
+devkit_parse_args "$@"
 
 echo "==> Installing Notepad++ ${VERSION} (Windows, portable) to ${PREFIX}"
 
-if [[ ! -f "$PORTABLE_ZIP" ]]; then
-    echo "ERROR: Portable archive not found: $PORTABLE_ZIP" >&2
-    exit 1
+PARTS_DIR="$PREBUILT_DIR/dev-tools/notepadpp/${VERSION}"
+INSTALLER=$(devkit_find_file "$PARTS_DIR")
+if [[ -z "$INSTALLER" ]]; then
+    echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
 fi
 
-MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "${PREFIX}" 2>/dev/null || true
-PREFIX="$(cygpath -u -- "$PREFIX")"
-
-unzip -qo "$PORTABLE_ZIP" -d "$PREFIX"
-
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=windows
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_extract "$INSTALLER" "$PREFIX" 0
+devkit_write_receipt notepadpp "$VERSION" windows "$PREFIX"
 
 echo "==> Notepad++ ${VERSION} installed to ${PREFIX}"
 echo "    Launcher: ${PREFIX}/notepad++.exe"
-echo "    Tip: for a full system-wide install, run the installer manually:"
-echo "         ${PARTS_DIR}/npp.${VERSION}.Installer.x64.exe"

@@ -4,95 +4,23 @@ set -euo pipefail
 TOOL="putty"
 VERSION="0.83"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
+
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
-
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/putty"
-else
-    PLATFORM="linux"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/putty"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/putty"
-    fi
-fi
-
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
 JOBS="${MAKE_JOBS:-$(nproc 2>/dev/null || echo 4)}"
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --prefix)  PREFIX="$2"; shift 2 ;;
-        --jobs)    JOBS="$2";   shift 2 ;;
-        --rebuild) rm -f "$PREFIX/INSTALL_RECEIPT.txt"; shift ;;
-        *) shift ;;
-    esac
-done
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix putty)}"
+devkit_parse_args "$@"
 
-echo "==> Installing PuTTY ${VERSION} (${PLATFORM}) to ${PREFIX}"
+echo "==> Installing PuTTY ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}"
 
-if [[ "$PLATFORM" == "windows" ]]; then
-    INSTALLER="$PREBUILT_DIR/dev-tools/putty/${VERSION}/putty-64bit-${VERSION}-installer.msi"
-    if [[ ! -f "$INSTALLER" ]]; then
-        echo "ERROR: Installer not found: $INSTALLER" >&2; exit 1
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    PARTS_DIR="$PREBUILT_DIR/dev-tools/putty/${VERSION}"
+    INSTALLER=$(devkit_find_file "$PARTS_DIR")
+    if [[ -z "$INSTALLER" ]]; then
+        echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
     fi
-    INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
-    MSI_LOG_POSIX="$(mktemp --suffix=.log)"
-    MSI_LOG_WIN="$(cygpath -w "$MSI_LOG_POSIX")"
-
-    echo "==> Installer : ${INSTALLER_WIN}"
-    echo "==> Command   : msiexec.exe /i \"${INSTALLER_WIN}\" /quiet /qn /norestart /L*V \"${MSI_LOG_WIN}\""
-
-    # Background cmd.exe so we can simultaneously tail the MSI log.
-    # start /wait makes cmd.exe block until msiexec + its service child exit.
-    set +e
-    cmd.exe //c "start /wait \"\" msiexec.exe /i \"${INSTALLER_WIN}\" /quiet /qn /norestart /L*V \"${MSI_LOG_WIN}\"" &
-    INSTALL_PID=$!
-
-    # Wait up to 10 s for the MSI log file to be created by the installer
-    echo "==> Waiting for Windows Installer to start..."
-    for i in 1 2 3 4 5 6 7 8 9 10; do
-        sleep 1
-        [[ -f "$MSI_LOG_POSIX" ]] && { echo "==> Streaming installer actions..."; break; }
-        echo "  (${i}s — waiting for log)"
-    done
-
-    # Stream filtered MSI log lines in real time while the installer runs
-    LOG_BYTES=0
-    while kill -0 "$INSTALL_PID" 2>/dev/null; do
-        if [[ -f "$MSI_LOG_POSIX" ]]; then
-            CUR=$(wc -c < "$MSI_LOG_POSIX" 2>/dev/null || echo 0)
-            if [[ "$CUR" -gt "$LOG_BYTES" ]]; then
-                tail -c +$((LOG_BYTES + 1)) "$MSI_LOG_POSIX" \
-                    | tr -d '\r' \
-                    | grep -E "^(Action start|MSI \(s\).*Note:|Return Value [^1]|Error [0-9])" \
-                    | sed 's/^Action start [0-9:]*: /  step: /' \
-                    | sed 's/^MSI (s)[^:]*Note: /  note: /' \
-                    || true
-                LOG_BYTES=$CUR
-            fi
-        fi
-        sleep 1
-    done
-
-    wait "$INSTALL_PID"
-    RC=$?
-    set -e
-
-    # On failure, show the last errors from the log for diagnosis
-    if [[ $RC -ne 0 && $RC -ne 3010 ]]; then
-        if [[ -f "$MSI_LOG_POSIX" ]]; then
-            echo "==> Last MSI log errors:"
-            tr -d '\r' < "$MSI_LOG_POSIX" \
-                | grep -E "(Error|Return Value [^1]|Note:)" | tail -15
-        fi
-        rm -f "$MSI_LOG_POSIX"
-        echo "ERROR: msiexec.exe failed (exit $RC)." >&2
-        echo "  Try the installer manually: ${INSTALLER_WIN}" >&2
-        exit 1
-    fi
-    rm -f "$MSI_LOG_POSIX"
-    [[ $RC -eq 3010 ]] && echo "==> Note: restart may be required (exit 3010)"
+    devkit_install_msi "$INSTALLER"
 else
     # Linux: build CLI tools from source (no GTK required)
     SOURCE_ARCHIVE="$SCRIPT_DIR/sources/putty-${VERSION}.tar.gz"
@@ -132,16 +60,9 @@ else
     cmake --install "$SRC_DIR/build" 2>&1
 fi
 
-mkdir -p "$PREFIX"
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt putty "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> PuTTY ${VERSION} installed to ${PREFIX}"
-if [[ "$PLATFORM" == "linux" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
     echo "    CLI tools: plink, pscp, psftp, puttygen"
 fi

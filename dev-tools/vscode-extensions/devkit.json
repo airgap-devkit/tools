@@ -2,7 +2,10 @@
   "id": "vscode-extensions",
   "name": "VS Code Extensions",
   "version": "various",
-  "category": "Developer Tools",
+  "version_label": "extension bundle",
+  "install_label": "Install Extensions",
+  "bundle_type": "vscode",
+  "category": "Bundles",
   "platform": "both",
   "description": "Offline bundle of essential VS Code extensions for C++ development, unit testing, and Python.",
   "setup": "setup.sh",
@@ -11,5 +14,15 @@
   "uses_prebuilt": true,
   "sort_order": 53,
   "source": "default",
-  "check_cmd": "code --version"
+  "check_cmd": "code --version",
+  "packages": [
+    {"name": "C/C++",                "id": "ms-vscode.cpptools",                  "version": "1.22.11",      "description": "IntelliSense, debugging and code browsing for C/C++"},
+    {"name": "CMake Tools",          "id": "ms-vscode.cmake-tools",               "version": "1.20.52",      "description": "Configure, build, and debug CMake projects"},
+    {"name": "CMake Language",       "id": "twxs.cmake",                          "version": "0.0.17",       "description": "CMake syntax highlighting and code snippets"},
+    {"name": "Python",               "id": "ms-python.python",                    "version": "2025.4.0",     "description": "IntelliSense, linting, debugging and formatting for Python"},
+    {"name": "Pylance",              "id": "ms-python.vscode-pylance",            "version": "2025.4.1",     "description": "Fast, feature-rich language support for Python"},
+    {"name": "Clang-Format",         "id": "xaver.clang-format",                  "version": "1.9.0",        "description": "Format C/C++ code using clang-format"},
+    {"name": "C++ TestMate",         "id": "matepek.vscode-catch2-test-adapter",  "version": "4.15.3",       "description": "Run Catch2, GoogleTest, and doctest unit tests"},
+    {"name": "Remote — SSH",         "id": "ms-vscode-remote.remote-ssh",         "version": "0.116.2024",   "description": "Develop on remote machines over SSH"}
+  ]
 }

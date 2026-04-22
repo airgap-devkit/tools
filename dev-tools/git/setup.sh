@@ -2,66 +2,30 @@
 set -euo pipefail
 
 TOOL="git"
-VERSION="2.53.0.3"
+VERSION="2.54.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/git"
-else
+source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
+
+if [[ "$DEVKIT_PLATFORM" != "windows" ]]; then
     echo "ERROR: Git for Windows installer is Windows-only." >&2
     echo "  On Linux, install Git via your package manager: sudo dnf install git" >&2
     exit 1
 fi
 
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --prefix)  PREFIX="$2"; shift 2 ;;
-        --rebuild) rm -f "$PREFIX/INSTALL_RECEIPT.txt"; shift ;;
-        *) shift ;;
-    esac
-done
+PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix git)}"
+devkit_parse_args "$@"
 
-echo "==> Installing Git ${VERSION} (${PLATFORM}) to ${PREFIX}"
+echo "==> Installing Git ${VERSION} (windows) to ${PREFIX}"
 
-INSTALLER="$PREBUILT_DIR/dev-tools/git/${VERSION}/Git-${VERSION}-64-bit.exe"
-if [[ ! -f "$INSTALLER" ]]; then
-    echo "ERROR: Installer not found: $INSTALLER" >&2
-    exit 1
+PARTS_DIR="$PREBUILT_DIR/dev-tools/git/${VERSION}"
+INSTALLER=$(devkit_find_file "$PARTS_DIR")
+if [[ -z "$INSTALLER" ]]; then
+    echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
 fi
 
-INSTALLER_WIN="$(cygpath -w "$INSTALLER")"
-PREFIX_WIN="$(cygpath -w "$PREFIX")"
-echo "==> Installer : ${INSTALLER_WIN}"
-echo "==> Prefix    : ${PREFIX_WIN}"
-
-# Git for Windows is an NSIS installer. Invoke via cmd.exe so MSYS never
-# rewrites the /VERYSILENT and /DIR arguments.
-# /VERYSILENT   — no UI
-# /NORESTART    — suppress reboot prompt
-# /NOCANCEL     — prevent cancellation
-# /SP-          — suppress "This will install…" prompt
-# /DIR          — install directory
-set +e
-cmd.exe //c "\"${INSTALLER_WIN}\" /VERYSILENT /NORESTART /NOCANCEL /SP- /DIR=\"${PREFIX_WIN}\""
-RC=$?
-set -e
-
-if [[ $RC -ne 0 ]]; then
-    echo "ERROR: Git installer failed (exit $RC)." >&2
-    echo "  Try running manually: ${INSTALLER_WIN}" >&2
-    exit 1
-fi
-
-mkdir -p "$PREFIX"
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_install_exe "$INSTALLER" "$PREFIX"
+devkit_write_receipt git "$VERSION" windows "$PREFIX"
 
 echo "==> Git ${VERSION} installed to ${PREFIX}"

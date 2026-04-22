@@ -10,31 +10,23 @@ fi
 TOOL="servy"
 VERSION="7.9"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
+
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
-PARTS_DIR="$PREBUILT_DIR/dev-tools/servy/${VERSION}"
-ARCHIVE="$PARTS_DIR/servy-${VERSION}-windows-x64.tar.xz"
-DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/servy"
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
-while [[ $# -gt 0 ]]; do
-    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
-done
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix servy)}"
+devkit_parse_args "$@"
 
 echo "==> Installing Servy ${VERSION} (Windows) to ${PREFIX}"
 
-if [[ ! -f "$ARCHIVE" ]]; then
-    echo "ERROR: Archive not found: $ARCHIVE" >&2; exit 1
+PARTS_DIR="$PREBUILT_DIR/dev-tools/servy/${VERSION}"
+INSTALLER=$(devkit_find_file "$PARTS_DIR")
+if [[ -z "$INSTALLER" ]]; then
+    echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
 fi
 
-MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
-PREFIX="$(cygpath -u -- "$PREFIX")"
-tar -xJf "$ARCHIVE" -C "$PREFIX" --strip-components=0
-
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=windows
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+mkdir -p "$PREFIX"
+devkit_extract "$INSTALLER" "$PREFIX" 0
+devkit_write_receipt servy "$VERSION" windows "$PREFIX"
 
 echo "==> Servy ${VERSION} installed to ${PREFIX}"
