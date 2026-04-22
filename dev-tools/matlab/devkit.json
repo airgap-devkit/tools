@@ -10,5 +10,6 @@
   "estimate": "~5s",
   "uses_prebuilt": false,
   "sort_order": 55,
-  "source": "default"
+  "source": "default",
+  "check_cmd": "matlab -batch \"disp('MATLAB ok')\" 2>/dev/null || echo 'MATLAB not found — install separately'"
 }
