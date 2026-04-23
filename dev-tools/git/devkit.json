@@ -2,6 +2,8 @@
   "asset_match": "64-bit.exe",
   "category": "Developer Tools",
   "check_cmd": "git --version",
+  "check_binary": "git",
+  "check_args": ["--version"],
   "description": "Distributed version control system. Windows: full installer including Git Bash, Git GUI, and credential manager. Installs to a user-defined prefix via silent NSIS installer.",
   "estimate": "~30s",
   "github_repo": "git-for-windows/git",

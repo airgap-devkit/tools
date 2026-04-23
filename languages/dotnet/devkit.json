@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 31,
   "source": "default",
-  "check_cmd": "dotnet --version"
+  "check_cmd": "dotnet --version",
+  "check_binary": "dotnet",
+  "check_args": ["--version"]
 }

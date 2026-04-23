@@ -11,5 +11,5 @@
   "uses_prebuilt": true,
   "sort_order": 50,
   "source": "default",
-  "check_cmd": "7z i 2>&1 | head -4"
+  "check_cmd": "7z i 2>&1"
 }

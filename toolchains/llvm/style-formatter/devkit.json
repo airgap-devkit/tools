@@ -11,5 +11,5 @@
   "uses_prebuilt": true,
   "sort_order": 11,
   "source": "default",
-  "check_cmd": "clang-format --version"
+  "check_cmd": "clang-format --version 2>&1 | sed 's/ ([^)]*)//'"
 }

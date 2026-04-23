@@ -11,5 +11,7 @@
   "uses_prebuilt": false,
   "sort_order": 56,
   "source": "default",
-  "check_cmd": "gdb --version 2>&1 | head -1"
+  "check_cmd": "gdb --version 2>&1",
+  "check_binary": "gdb",
+  "check_args": ["--version"]
 }

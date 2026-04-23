@@ -11,5 +11,5 @@
   "uses_prebuilt": true,
   "sort_order": 58,
   "source": "default",
-  "check_cmd": "plink --version 2>&1 | head -1 || putty --version 2>&1 | head -1"
+  "check_cmd": "plink --version 2>&1 || putty --version 2>&1"
 }

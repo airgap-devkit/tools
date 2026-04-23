@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 55,
   "source": "default",
-  "check_cmd": "filezilla --version 2>&1 | head -1"
+  "check_cmd": "filezilla --version 2>&1",
+  "check_cmd_windows": "filezilla --version 2>&1 || filezilla.exe --version 2>&1",
+  "check_cmd_linux": "filezilla --version 2>&1"
 }

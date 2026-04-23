@@ -10,5 +10,7 @@
   "estimate": "~3 min",
   "uses_prebuilt": true,
   "sort_order": 12,
-  "check_cmd": "gcc --version"
+  "check_cmd": "gcc --version",
+  "check_binary": "gcc",
+  "check_args": ["--version"]
 }

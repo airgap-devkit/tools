@@ -130,9 +130,16 @@ devkit_install_msi() {
     cmd.exe //c "start /wait \"\" msiexec.exe /i \"${msi_w}\" /quiet /qn /norestart /L*V \"${log_w}\"" &
     local pid=$!
 
-    # Stream MSI log while installer runs
+    # Stream MSI log while installer runs; abort after 10 minutes.
     local log_bytes=0
+    local elapsed=0
+    local timeout=600
     while kill -0 "$pid" 2>/dev/null; do
+        if [[ $elapsed -ge $timeout ]]; then
+            echo "ERROR: MSI install timed out after ${timeout}s — killing." >&2
+            kill "$pid" 2>/dev/null || true
+            break
+        fi
         if [[ -f "$log_p" ]]; then
             local cur
             cur=$(wc -c < "$log_p" 2>/dev/null || echo 0)
@@ -147,6 +154,7 @@ devkit_install_msi() {
             fi
         fi
         sleep 1
+        elapsed=$((elapsed + 1))
     done
     wait "$pid"
     local rc=$?

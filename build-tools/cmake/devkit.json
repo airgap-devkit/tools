@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 20,
   "source": "default",
-  "check_cmd": "cmake --version"
+  "check_cmd": "cmake --version",
+  "check_binary": "cmake",
+  "check_args": ["--version"]
 }

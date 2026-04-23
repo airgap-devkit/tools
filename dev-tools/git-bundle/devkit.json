@@ -11,5 +11,5 @@
   "uses_prebuilt": false,
   "sort_order": 56,
   "source": "default",
-  "check_cmd": "git bundle --help > /dev/null 2>&1 && echo 'git-bundle ok'"
+  "check_cmd": "git --version 2>&1 && echo 'git-bundle available'"
 }

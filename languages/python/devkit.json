@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 30,
   "source": "default",
-  "check_cmd": "python --version"
+  "check_cmd": "python --version",
+  "check_cmd_windows": "python --version",
+  "check_cmd_linux": "python3 --version 2>&1 || python --version 2>&1"
 }

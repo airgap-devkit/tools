@@ -10,5 +10,7 @@
   "estimate": "~5 sec",
   "uses_prebuilt": true,
   "sort_order": 11,
-  "check_cmd": "ninja --version"
+  "check_cmd": "ninja --version",
+  "check_binary": "ninja",
+  "check_args": ["--version"]
 }

@@ -11,5 +11,5 @@
   "uses_prebuilt": true,
   "sort_order": 40,
   "source": "default",
-  "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH — check install path'"
+  "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH - check install path'"
 }

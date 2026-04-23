@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 54,
   "source": "default",
-  "check_cmd": "sqlite3 --version"
+  "check_cmd": "sqlite3 --version",
+  "check_binary": "sqlite3",
+  "check_args": ["--version"]
 }

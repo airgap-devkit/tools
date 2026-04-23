@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 52,
   "source": "default",
-  "check_cmd": "conan --version"
+  "check_cmd": "conan --version",
+  "check_binary": "conan",
+  "check_args": ["--version"]
 }

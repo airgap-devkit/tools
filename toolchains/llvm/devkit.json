@@ -10,5 +10,7 @@
   "estimate": "~3 min",
   "uses_prebuilt": true,
   "sort_order": 10,
-  "check_cmd": "clang --version"
+  "check_cmd": "clang --version",
+  "check_binary": "clang",
+  "check_args": ["--version"]
 }
