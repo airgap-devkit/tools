@@ -1,7 +1,7 @@
 {
   "id": "notepadpp",
   "name": "Notepad++",
-  "version": "8.9.3",
+  "version": "8.9.4",
   "category": "Developer Tools",
   "platform": "windows",
   "description": "Lightweight source code editor for Windows with syntax highlighting, multi-tab editing, and plugin support.",

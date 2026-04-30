@@ -8,7 +8,7 @@ if [[ "${AIRGAP_OS:-}" != "windows" && "$OSTYPE" != "msys" && "$OSTYPE" != "cygw
 fi
 
 TOOL="notepadpp"
-VERSION="8.9.3"
+VERSION="8.9.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"

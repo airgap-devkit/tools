@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="dotnet"
-VERSION="10.0.202"
+VERSION="10.0.203"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/languages/dotnet/${VERSION}"

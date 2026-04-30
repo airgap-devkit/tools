@@ -102,7 +102,6 @@ airgap-devkit-tools/
   frameworks/
     grpc/               devkit.json  (gRPC 1.80.0)
   dev-tools/
-    7zip/               devkit.json  (7-Zip 26.00)
     servy/              devkit.json  (Servy 7.9)
     conan/              devkit.json  (Conan 2.27.1)
     vscode-extensions/  devkit.json  (VS Code Extensions)

@@ -101,7 +101,7 @@ devkit_install_exe_silent() {
 }
 
 # devkit_install_nsis_s POSIX_PATH PREFIX
-# For NSIS installers that use the short /S flag (7-Zip, FileZilla) instead of /VERYSILENT.
+# For NSIS installers that use the short /S flag (e.g. FileZilla) instead of /VERYSILENT.
 devkit_install_nsis_s() {
     local file="$1" prefix="$2"
     local exe_w prefix_w

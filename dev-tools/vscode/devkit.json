@@ -1,7 +1,7 @@
 {
   "id": "vscode",
   "name": "Visual Studio Code",
-  "version": "1.99.3",
+  "version": "1.117.0",
   "category": "Developer Tools",
   "platform": "both",
   "description": "Lightweight, extensible source code editor with built-in Git, debugging, IntelliSense, and a rich extension ecosystem. Windows: Inno Setup installer. Linux: RPM package for RHEL 8/9.",

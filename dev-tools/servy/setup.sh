@@ -8,7 +8,7 @@ if [[ "${AIRGAP_OS:-}" != "windows" && "$OSTYPE" != "msys" && "$OSTYPE" != "cygw
 fi
 
 TOOL="servy"
-VERSION="7.9"
+VERSION="8.3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
@@ -26,7 +26,8 @@ if [[ -z "$INSTALLER" ]]; then
 fi
 
 mkdir -p "$PREFIX"
-devkit_extract "$INSTALLER" "$PREFIX" 0
+# Servy 8.x ships as an Inno Setup installer exe
+devkit_install_exe "$INSTALLER" "$PREFIX"
 devkit_write_receipt servy "$VERSION" windows "$PREFIX"
 
 echo "==> Servy ${VERSION} installed to ${PREFIX}"

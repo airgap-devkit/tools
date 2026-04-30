@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="conan"
-VERSION="2.27.1"
+VERSION="2.28.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/conan/${VERSION}"
@@ -13,6 +13,7 @@ if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygw
     DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/conan"
 else
     PLATFORM="linux"
+    ARCHIVE="conan-${VERSION}-linux-x86_64.tgz"
     if [[ "$(id -u)" == "0" ]]; then
         DEFAULT_PREFIX="/opt/airgap-cpp-devkit/conan"
     else
@@ -27,34 +28,19 @@ done
 
 echo "==> Installing Conan ${VERSION} (${PLATFORM}) to ${PREFIX}"
 
+ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
+if [[ ! -f "$ARCHIVE_PATH" ]]; then
+    echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
+fi
+
 if [[ "$PLATFORM" == "windows" ]]; then
-    ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
-    if [[ ! -f "$ARCHIVE_PATH" ]]; then
-        echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
-    fi
     MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
     PREFIX="$(cygpath -u -- "$PREFIX")"
     tar -xJf "$ARCHIVE_PATH" -C "$PREFIX" --strip-components=0
 else
-    DEB="$PARTS_DIR/conan-${VERSION}-amd64.deb"
-    if [[ ! -f "$DEB" ]]; then
-        echo "ERROR: .deb not found: $DEB" >&2; exit 1
-    fi
-    if command -v dpkg &>/dev/null; then
-        dpkg -i "$DEB"
-    elif command -v rpm &>/dev/null; then
-        # RHEL 8: install via pip from the Windows zip fallback is not available
-        # Extract conan binary from .deb manually
-        mkdir -p "$PREFIX/bin"
-        _tmp_deb="$(mktemp -d)"
-        trap 'rm -rf "$_tmp_deb"' EXIT
-        dpkg-deb --extract "$DEB" "$_tmp_deb" 2>/dev/null || ar x "$DEB" --output="$_tmp_deb"
-        find "$_tmp_deb" -name "conan" -type f -exec cp {} "$PREFIX/bin/" \;
-        chmod +x "$PREFIX/bin/conan"
-    else
-        echo "ERROR: Neither dpkg nor rpm found. Cannot install .deb on this system." >&2
-        exit 1
-    fi
+    mkdir -p "$PREFIX/bin"
+    tar -xzf "$ARCHIVE_PATH" -C "$PREFIX/bin" --strip-components=1
+    chmod +x "$PREFIX/bin/conan"
 fi
 
 cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT

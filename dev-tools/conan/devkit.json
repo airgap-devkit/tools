@@ -1,7 +1,7 @@
 {
   "id": "conan",
   "name": "Conan",
-  "version": "2.27.1",
+  "version": "2.28.0",
   "category": "Developer Tools",
   "platform": "both",
   "description": "Decentralized C/C++ package manager for managing dependencies and reproducible build configurations.",

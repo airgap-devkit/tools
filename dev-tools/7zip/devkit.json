@@ -1,7 +1,8 @@
 {
+  "hidden": true,
   "id": "7zip",
   "name": "7-Zip",
-  "version": "26.00",
+  "version": "26.01",
   "category": "Developer Tools",
   "platform": "both",
   "description": "High-compression file archiver supporting 7z, ZIP, TAR, GZip, and many other formats.",

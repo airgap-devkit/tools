@@ -1,7 +1,7 @@
 {
   "id": "cmake",
   "name": "CMake",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "category": "Build Tools",
   "platform": "both",
   "description": "Cross-platform build system generator that manages the compilation process in a compiler-independent manner.",

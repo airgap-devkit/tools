@@ -51,7 +51,6 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **7-Zip** | 26.00 | Windows + Linux | Yes | `dev-tools/7zip/` |
 | **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
 | **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
 | **VS Code Extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
@@ -75,7 +74,6 @@ All tools target air-gapped environments — no internet access required at inst
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
 | gRPC 1.80.0 | Yes | — | Windows MSVC build only |
-| 7-Zip 26.00 | Yes | Yes | Admin + user install |
 | Servy 7.9 | Yes | — | Windows only, graceful no-op on Linux |
 | Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code Extensions | Yes | Yes | Per-platform .vsix files |

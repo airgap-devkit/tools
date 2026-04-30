@@ -48,7 +48,15 @@ else
         echo "ERROR: No parts found for ${ARCHIVE}" >&2; exit 1
     fi
     echo "    Found ${#PARTS[@]} parts."
-    cat "${PARTS[@]}" | tar -xJ --strip-components=1 -C "$PREFIX"
+    # Archive is structured as ./python/bin/..., so strip 2 components
+    # (the leading './' and the 'python/' directory) to land in $PREFIX.
+    cat "${PARTS[@]}" | tar -xJ --strip-components=2 -C "$PREFIX"
+
+    # Create python3 -> python3.14 symlink if absent (the archive only ships
+    # the versioned binary; most tooling expects the generic 'python3' name).
+    if [[ -f "$PREFIX/bin/python3.14" && ! -e "$PREFIX/bin/python3" ]]; then
+        ln -sf python3.14 "$PREFIX/bin/python3"
+    fi
 fi
 
 cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT

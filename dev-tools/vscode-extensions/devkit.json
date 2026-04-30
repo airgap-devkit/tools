@@ -16,13 +16,13 @@
   "source": "default",
   "check_cmd": "code --version",
   "packages": [
-    {"name": "C/C++",                "id": "ms-vscode.cpptools",                  "version": "1.22.11",      "description": "IntelliSense, debugging and code browsing for C/C++"},
-    {"name": "CMake Tools",          "id": "ms-vscode.cmake-tools",               "version": "1.20.52",      "description": "Configure, build, and debug CMake projects"},
-    {"name": "CMake Language",       "id": "twxs.cmake",                          "version": "0.0.17",       "description": "CMake syntax highlighting and code snippets"},
-    {"name": "Python",               "id": "ms-python.python",                    "version": "2025.4.0",     "description": "IntelliSense, linting, debugging and formatting for Python"},
-    {"name": "Pylance",              "id": "ms-python.vscode-pylance",            "version": "2025.4.1",     "description": "Fast, feature-rich language support for Python"},
-    {"name": "Clang-Format",         "id": "xaver.clang-format",                  "version": "1.9.0",        "description": "Format C/C++ code using clang-format"},
-    {"name": "C++ TestMate",         "id": "matepek.vscode-catch2-test-adapter",  "version": "4.15.3",       "description": "Run Catch2, GoogleTest, and doctest unit tests"},
-    {"name": "Remote — SSH",         "id": "ms-vscode-remote.remote-ssh",         "version": "0.116.2024",   "description": "Develop on remote machines over SSH"}
+    {"name": "C/C++",                "id": "ms-vscode.cpptools",                  "version": "1.31.5",              "description": "IntelliSense, debugging and code browsing for C/C++"},
+    {"name": "CMake Tools",          "id": "ms-vscode.cmake-tools",               "version": "1.23.52",             "description": "Configure, build, and debug CMake projects"},
+    {"name": "CMake Language",       "id": "twxs.cmake",                          "version": "0.0.17",              "description": "CMake syntax highlighting and code snippets"},
+    {"name": "Python",               "id": "ms-python.python",                    "version": "2026.4.0",            "description": "IntelliSense, linting, debugging and formatting for Python"},
+    {"name": "Pylance",              "id": "ms-python.vscode-pylance",            "version": "2026.2.1",            "description": "Fast, feature-rich language support for Python"},
+    {"name": "Clang-Format",         "id": "xaver.clang-format",                  "version": "1.9.0",               "description": "Format C/C++ code using clang-format"},
+    {"name": "C++ TestMate",         "id": "matepek.vscode-catch2-test-adapter",  "version": "4.23.15",             "description": "Run Catch2, GoogleTest, and doctest unit tests"},
+    {"name": "Remote — SSH",         "id": "ms-vscode-remote.remote-ssh",         "version": "0.123.2026033115",    "description": "Develop on remote machines over SSH"}
   ]
 }

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="7zip"
-VERSION="26.00"
+VERSION="26.01"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"

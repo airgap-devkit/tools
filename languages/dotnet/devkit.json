@@ -1,7 +1,7 @@
 {
   "id": "dotnet",
   "name": ".NET SDK",
-  "version": "10.0.202",
+  "version": "10.0.203",
   "category": "Languages",
   "platform": "both",
   "description": "Cross-platform SDK for building and running .NET applications in C#, F#, and Visual Basic.",
