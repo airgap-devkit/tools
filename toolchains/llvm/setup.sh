@@ -13,7 +13,17 @@ if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygw
     DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/clang-llvm"
 else
     PLATFORM="linux"
-    ARCHIVE="LLVM-${VERSION}-Linux-X64.tar.xz"
+    # Select the correct binary based on glibc version.
+    # The standard build requires glibc >= 2.32 (Ubuntu 22.04+).
+    # RHEL 8 ships glibc 2.28 — use the dedicated RHEL 8 build instead.
+    # If ldd is unavailable, default to the rhel8 binary (safer).
+    _glibc_minor=$(ldd --version 2>/dev/null | awk 'NR==1{split($NF,v,"."); print int(v[2])}')
+    _glibc_minor=${_glibc_minor:-0}
+    if (( _glibc_minor < 32 )); then
+        ARCHIVE="LLVM-${VERSION}-Linux-X64-rhel8.tar.xz"
+    else
+        ARCHIVE="LLVM-${VERSION}-Linux-X64.tar.xz"
+    fi
     if [[ "$(id -u)" == "0" ]]; then
         DEFAULT_PREFIX="/opt/airgap-cpp-devkit/clang-llvm"
     else
@@ -39,6 +49,11 @@ fi
 PARTS=("$PARTS_DIR/${ARCHIVE}.part-"*)
 if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
     echo "ERROR: No parts found matching ${ARCHIVE}.part-* in $PARTS_DIR" >&2
+    if [[ "${ARCHIVE}" == *"-rhel8"* ]]; then
+        echo "       This system requires the RHEL 8 compatible LLVM binary (glibc 2.28)." >&2
+        echo "       Trigger the 'Build LLVM tools for RHEL 8' workflow in GitHub Actions" >&2
+        echo "       (.github/workflows/build-llvm-rhel8.yml) then re-initialise prebuilt/." >&2
+    fi
     exit 1
 fi
 echo "    Found ${#PARTS[@]} parts."
@@ -52,6 +67,17 @@ fi
 
 echo "    Reassembling and extracting (this may take a moment)..."
 cat "${PARTS[@]}" | tar -xJ --strip-components=1 -C "$PREFIX"
+
+# Verify the installed binaries actually execute on this system.
+# A mismatch here means the wrong binary variant was selected above.
+if [[ "$PLATFORM" == "linux" ]]; then
+    if ! "$PREFIX/bin/clang-format" --version &>/dev/null; then
+        echo "ERROR: clang-format was extracted but cannot execute — runtime library mismatch." >&2
+        echo "       Selected archive: ${ARCHIVE}" >&2
+        echo "       Run the 'Build LLVM tools for RHEL 8' workflow to produce a compatible binary." >&2
+        exit 1
+    fi
+fi
 
 # Write install receipt
 cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
