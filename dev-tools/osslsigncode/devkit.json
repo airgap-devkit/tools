@@ -1,0 +1,17 @@
+{
+  "id": "osslsigncode",
+  "name": "osslsigncode",
+  "version": "2.13",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Cross-platform Authenticode code-signing for Windows PE binaries (.exe/.dll) using PKCS#12 certificates — no Windows SDK required. Linux: source build.",
+  "setup": "setup.sh",
+  "receipt_name": "osslsigncode",
+  "estimate": "~5s (Windows) / ~3 min (Linux source build)",
+  "uses_prebuilt": true,
+  "sort_order": 60,
+  "source": "default",
+  "check_cmd": "osslsigncode --version 2>&1",
+  "check_binary": "osslsigncode",
+  "check_args": ["--version"]
+}
