@@ -4,7 +4,16 @@ set -euo pipefail
 TOOL="vscode-extensions"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
+# Look for .vsix files first in the dedicated extensions subdir, then fall back
+# to the vscode prebuilt dir (which is where they land when prebuilt/ is laid
+# out with a flat vscode/ directory rather than a vscode-extensions/ sibling).
 VSIX_DIR="$PREBUILT_DIR/dev-tools/vscode-extensions"
+if [[ ! -d "$VSIX_DIR" ]]; then
+    VSIX_DIR="$PREBUILT_DIR/dev-tools/vscode/extensions"
+fi
+if [[ ! -d "$VSIX_DIR" ]]; then
+    VSIX_DIR="$PREBUILT_DIR/dev-tools/vscode"
+fi
 
 if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"

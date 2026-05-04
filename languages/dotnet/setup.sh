@@ -45,6 +45,9 @@ else
     mkdir -p "$PREFIX"
 fi
 cat "${PARTS[@]}" | tar -xJ -C "$PREFIX"
+if [[ "$PLATFORM" == "linux" ]]; then
+    [[ -f "$PREFIX/dotnet" ]] && chmod +x "$PREFIX/dotnet"
+fi
 
 # Wire DOTNET_ROOT for the current session
 export DOTNET_ROOT="$PREFIX"

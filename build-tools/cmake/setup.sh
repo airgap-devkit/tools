@@ -34,12 +34,15 @@ if [[ ! -f "$ARCHIVE_PATH" ]]; then
 fi
 
 if [[ "$PLATFORM" == "windows" ]]; then
-    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
+    mkdir -p "$PREFIX"
     PREFIX="$(cygpath -u -- "$PREFIX")"
 else
     mkdir -p "$PREFIX"
 fi
 tar -xJf "$ARCHIVE_PATH" -C "$PREFIX" --strip-components=0
+if [[ "$PLATFORM" == "linux" ]]; then
+    find "$PREFIX/bin" -maxdepth 1 -type f -exec chmod +x {} +
+fi
 
 cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
 tool=${TOOL}

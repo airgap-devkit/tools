@@ -50,6 +50,14 @@ elif [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
                 rpm2cpio "$INSTALLER" | cpio -idm --quiet 2>/dev/null || \
                     { echo "ERROR: rpm2cpio failed — ensure it is installed (dnf install rpm2cpio)" >&2; exit 1; }
                 INSTALL_ROOT="$PREFIX"
+                # Wire up a bin/code shim pointing at the extracted binary.
+                CODE_BIN="$PREFIX/usr/share/code/bin/code"
+                if [[ -f "$CODE_BIN" ]]; then
+                    chmod +x "$CODE_BIN"
+                    mkdir -p "$PREFIX/bin"
+                    ln -sf "../usr/share/code/bin/code" "$PREFIX/bin/code"
+                    echo "    Symlink: $PREFIX/bin/code -> $CODE_BIN"
+                fi
             fi
             ;;
         *.tar.gz)

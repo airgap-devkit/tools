@@ -53,11 +53,6 @@ RECEIPT
     echo "    Add ${PREFIX}/bin to your PATH."
 
 else
-    # Linux: install RPMs (requires root)
-    if [[ "$(id -u)" != "0" ]]; then
-        echo "ERROR: Root required to install GCC toolset RPMs." >&2
-        exit 1
-    fi
     PARTS=("$PARTS_DIR/gcc-toolset-15-rhel8-rpms.tar.xz.part-"*)
     if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
         echo "ERROR: No parts found for gcc-toolset-15-rhel8-rpms.tar.xz" >&2
@@ -66,10 +61,41 @@ else
     echo "    Found ${#PARTS[@]} parts. Extracting RPMs..."
     TMP=$(mktemp -d)
     cat "${PARTS[@]}" | tar -xJ -C "$TMP"
-    echo "    Installing RPMs..."
-    rpm -ivh "$TMP"/*.rpm
-    rm -rf "$TMP"
 
-    echo "==> GCC toolset-15 installed."
-    echo "    Enable with: scl enable gcc-toolset-15 bash"
+    if [[ "$(id -u)" == "0" ]]; then
+        # Root: install system-wide via rpm so scl enable works
+        echo "    Installing RPMs (system-wide)..."
+        rpm -ivh "$TMP"/*.rpm
+        rm -rf "$TMP"
+        echo "==> GCC toolset-15 installed."
+        echo "    Enable with: scl enable gcc-toolset-15 bash"
+    else
+        # Non-root: extract RPM payload into PREFIX with rpm2cpio | cpio
+        if ! command -v rpm2cpio &>/dev/null; then
+            echo "ERROR: Non-root install requires rpm2cpio (usually part of rpm package)." >&2
+            rm -rf "$TMP"
+            exit 1
+        fi
+        echo "    Non-root install: extracting RPM payloads to ${PREFIX} ..."
+        mkdir -p "$PREFIX"
+        for rpm_file in "$TMP"/*.rpm; do
+            rpm2cpio "$rpm_file" | cpio -idmv --directory="$PREFIX" 2>/dev/null
+        done
+        rm -rf "$TMP"
+        # Hoist the opt/rh/gcc-toolset-15 tree up to PREFIX if rpm2cpio nested it
+        if [[ -d "$PREFIX/opt/rh/gcc-toolset-15/root" ]]; then
+            cp -a "$PREFIX/opt/rh/gcc-toolset-15/root/." "$PREFIX/"
+            rm -rf "$PREFIX/opt"
+        fi
+        cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
+tool=${TOOL}
+version=${VERSION}
+platform=${PLATFORM}
+install_prefix=${PREFIX}
+installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+install_mode=user
+RECEIPT
+        echo "==> GCC toolset-15 installed (user mode) to ${PREFIX}."
+        echo "    Add ${PREFIX}/bin to your PATH."
+    fi
 fi

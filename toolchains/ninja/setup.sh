@@ -42,7 +42,7 @@ if [[ "$PLATFORM" == "windows" ]]; then
 else
     mkdir -p "$PREFIX/bin"
 fi
-tar -xJf "$ARCHIVE_PATH" -C "$PREFIX/bin" "$BINARY"
+tar -xJf "$ARCHIVE_PATH" -C "$PREFIX/bin" "./$BINARY"
 chmod +x "$PREFIX/bin/$BINARY"
 
 cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT

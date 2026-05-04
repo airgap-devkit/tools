@@ -59,7 +59,7 @@ fi
 echo "    Found ${#PARTS[@]} parts."
 
 if [[ "$PLATFORM" == "windows" ]]; then
-    MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
+    mkdir -p "$PREFIX"
     PREFIX="$(cygpath -u -- "$PREFIX")"
 else
     mkdir -p "$PREFIX"
