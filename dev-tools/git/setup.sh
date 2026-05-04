@@ -8,9 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
 
 if [[ "$DEVKIT_PLATFORM" != "windows" ]]; then
-    echo "ERROR: Git for Windows installer is Windows-only." >&2
-    echo "  On Linux, install Git via your package manager: sudo dnf install git" >&2
-    exit 1
+    echo "Skipping: Git for Windows is Windows-only. On Linux, Git is provided by the OS."
+    exit 0
 fi
 
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
