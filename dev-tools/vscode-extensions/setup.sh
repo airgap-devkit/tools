@@ -33,6 +33,24 @@ done
 
 echo "==> Installing VS Code Extensions (offline)"
 
+# Reassemble any split VSIX archives (*.vsix.part-aa, *.vsix.part-ab, …)
+# into a temp directory before installing. Split parts are used for files
+# that exceed GitHub's 100 MB per-file limit.
+EXTRA_VSIX_DIR=""
+mapfile -t SPLIT_BASES < <(
+    find "$VSIX_DIR" -maxdepth 1 -name "*.vsix.part-aa" 2>/dev/null | sort | sed 's/\.part-aa$//'
+)
+if [[ ${#SPLIT_BASES[@]} -gt 0 ]]; then
+    EXTRA_VSIX_DIR="$(mktemp -d)"
+    trap 'rm -rf "$EXTRA_VSIX_DIR"' EXIT
+    for base in "${SPLIT_BASES[@]}"; do
+        name="$(basename "$base")"
+        parts=("${base}.part-"*)
+        echo "    Assembling ${name} from ${#parts[@]} parts..."
+        cat "${parts[@]}" > "$EXTRA_VSIX_DIR/${name}"
+    done
+fi
+
 if ! command -v code &>/dev/null; then
     echo "ERROR: 'code' not found in PATH." >&2
     echo "       Install VS Code and ensure the 'code' command is available on PATH." >&2
@@ -46,7 +64,13 @@ if [[ ! -d "$VSIX_DIR" ]]; then
     exit 1
 fi
 
-mapfile -t VSIX_FILES < <(find "$VSIX_DIR" -maxdepth 1 -name "*.vsix" | sort)
+mapfile -t VSIX_FILES < <(
+    find "$VSIX_DIR" -maxdepth 1 -name "*.vsix" 2>/dev/null
+    [[ -n "$EXTRA_VSIX_DIR" ]] && find "$EXTRA_VSIX_DIR" -maxdepth 1 -name "*.vsix" 2>/dev/null
+    true
+)
+# Sort deduplicated list (assembled files take precedence over any stray originals)
+mapfile -t VSIX_FILES < <(printf '%s\n' "${VSIX_FILES[@]}" | sort -u)
 if [[ ${#VSIX_FILES[@]} -eq 0 ]]; then
     echo "ERROR: No .vsix files found in ${VSIX_DIR}" >&2
     exit 1
