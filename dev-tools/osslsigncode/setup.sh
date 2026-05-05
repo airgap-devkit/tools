@@ -51,52 +51,66 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     echo "      export PATH=\"${BINDIR_POSIX}:\$PATH\""
 
 else
-    # ── Linux: build from source (cmake + OpenSSL + libcurl + zlib) ────────
+    # ── Linux: prefer prebuilt static binary; fall back to source build ────
+    LINUX_BIN="$PREBUILT_DIR/dev-tools/osslsigncode/${VERSION}/osslsigncode-linux-amd64"
     SOURCE_ARCHIVE="$SCRIPT_DIR/sources/osslsigncode-${VERSION}.tar.gz"
-    if [[ ! -f "$SOURCE_ARCHIVE" ]]; then
-        echo "ERROR: Source archive not found: $SOURCE_ARCHIVE" >&2
-        echo "Run: bash scripts/download-prebuilt.sh --small" >&2
+
+    if [[ -f "$LINUX_BIN" ]]; then
+        echo "==> Installing prebuilt osslsigncode ${VERSION} (linux) to ${PREFIX}/bin"
+        mkdir -p "$PREFIX/bin"
+        cp "$LINUX_BIN" "$PREFIX/bin/osslsigncode"
+        chmod +x "$PREFIX/bin/osslsigncode"
+        echo "==> osslsigncode ${VERSION} installed to ${PREFIX}/bin"
+
+    elif [[ -f "$SOURCE_ARCHIVE" ]]; then
+        echo "==> No prebuilt Linux binary found — building from source..."
+
+        MISSING=()
+        for cmd in gcc cmake pkg-config; do
+            command -v "$cmd" &>/dev/null || MISSING+=("$cmd")
+        done
+        for pkg in openssl zlib; do
+            pkg-config --exists "$pkg" 2>/dev/null || MISSING+=("pkg: $pkg (install $pkg-devel)")
+        done
+        if [[ ${#MISSING[@]} -gt 0 ]]; then
+            echo "ERROR: Missing build dependencies:" >&2
+            printf "  - %s\n" "${MISSING[@]}" >&2
+            echo "" >&2
+            echo "On RHEL 8:" >&2
+            echo "  dnf install gcc cmake openssl-devel zlib-devel pkg-config" >&2
+            echo "  (cmake: install from airgap-devkit first if system cmake is <3.14)" >&2
+            exit 1
+        fi
+
+        BUILD_DIR=$(mktemp -d)
+        trap 'rm -rf "$BUILD_DIR"' EXIT
+
+        echo "==> Extracting source..."
+        tar -xzf "$SOURCE_ARCHIVE" -C "$BUILD_DIR"
+        SRC_DIR="$BUILD_DIR/osslsigncode-${VERSION}"
+
+        echo "==> Configuring (${JOBS} jobs)..."
+        cmake -S "$SRC_DIR" -B "$SRC_DIR/build" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DWITH_CURL=OFF \
+            2>&1
+
+        echo "==> Building..."
+        cmake --build "$SRC_DIR/build" --parallel "$JOBS" 2>&1
+
+        echo "==> Installing..."
+        cmake --install "$SRC_DIR/build" 2>&1
+
+        echo "==> osslsigncode ${VERSION} installed to ${PREFIX}"
+        echo "    Binary: ${PREFIX}/bin/osslsigncode"
+
+    else
+        echo "ERROR: No prebuilt binary and no source archive found." >&2
+        echo "  Expected prebuilt: ${LINUX_BIN}" >&2
+        echo "  Expected source:   ${SOURCE_ARCHIVE}" >&2
         exit 1
     fi
-
-    MISSING=()
-    for cmd in gcc cmake pkg-config; do
-        command -v "$cmd" &>/dev/null || MISSING+=("$cmd")
-    done
-    for pkg in openssl libcurl zlib; do
-        pkg-config --exists "$pkg" 2>/dev/null || MISSING+=("pkg: $pkg (install $pkg-devel)")
-    done
-    if [[ ${#MISSING[@]} -gt 0 ]]; then
-        echo "ERROR: Missing build dependencies:" >&2
-        printf "  - %s\n" "${MISSING[@]}" >&2
-        echo "" >&2
-        echo "On RHEL 8:" >&2
-        echo "  dnf install gcc cmake openssl-devel libcurl-devel zlib-devel pkg-config" >&2
-        echo "  (cmake: install from airgap-devkit first if system cmake is <3.14)" >&2
-        exit 1
-    fi
-
-    BUILD_DIR=$(mktemp -d)
-    trap 'rm -rf "$BUILD_DIR"' EXIT
-
-    echo "==> Extracting source..."
-    tar -xzf "$SOURCE_ARCHIVE" -C "$BUILD_DIR"
-    SRC_DIR="$BUILD_DIR/osslsigncode-${VERSION}"
-
-    echo "==> Configuring (${JOBS} jobs)..."
-    cmake -S "$SRC_DIR" -B "$SRC_DIR/build" \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX="$PREFIX" \
-        2>&1
-
-    echo "==> Building..."
-    cmake --build "$SRC_DIR/build" --parallel "$JOBS" 2>&1
-
-    echo "==> Installing..."
-    cmake --install "$SRC_DIR/build" 2>&1
-
-    echo "==> osslsigncode ${VERSION} installed to ${PREFIX}"
-    echo "    Binary: ${PREFIX}/bin/osslsigncode"
 fi
 
 devkit_write_receipt osslsigncode "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"

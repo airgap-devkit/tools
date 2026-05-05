@@ -24,6 +24,18 @@ done
 
 RPM="$PREBUILT_DIR/toolchains/lcov/${VERSION}/lcov-${VERSION}-0.noarch.rpm"
 SOURCE_ARCHIVE="$PREBUILT_DIR/toolchains/lcov/${VERSION}/lcov-${VERSION}.tar.xz"
+PERL_VENDOR="$PREBUILT_DIR/toolchains/lcov/${VERSION}/perl-vendor-lcov.tar.xz"
+
+# Install Capture::Tiny (and any other vendored Perl deps) into the lcov lib dir.
+# lcov 2.x needs Capture::Tiny which is not shipped by default on RHEL 8.
+_install_perl_vendor() {
+    local lib_dir="$1"
+    if [[ -f "$PERL_VENDOR" ]]; then
+        echo "    Vendoring Perl dependencies into ${lib_dir}..."
+        mkdir -p "$lib_dir"
+        tar -xJf "$PERL_VENDOR" -C "$lib_dir"
+    fi
+}
 
 echo "==> Installing lcov ${VERSION}"
 
@@ -31,12 +43,14 @@ echo "==> Installing lcov ${VERSION}"
 if command -v rpm &>/dev/null && [[ "$(id -u)" == "0" ]] && [[ -f "$RPM" ]]; then
     echo "    Installing via RPM..."
     rpm -ivh "$RPM"
+    _install_perl_vendor "/usr/lib/lcov"
 elif [[ -f "$SOURCE_ARCHIVE" ]]; then
     echo "    Installing from source archive..."
     TMP="$(mktemp -d)"
     trap 'rm -rf "$TMP"' EXIT
     tar -xJf "$SOURCE_ARCHIVE" -C "$TMP"
     make -C "$TMP/lcov-${VERSION}" install PREFIX="$PREFIX"
+    _install_perl_vendor "$PREFIX/lib/lcov"
 else
     echo "ERROR: Neither RPM nor source archive found for lcov ${VERSION}" >&2
     echo "       Expected RPM at: ${RPM}" >&2

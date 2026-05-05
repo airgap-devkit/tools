@@ -11,20 +11,32 @@ else
 fi
 
 # ── Split-archive assembly ──────────────────────────────────────────────────
-# devkit_assemble_parts DIR
-# If DIR contains .part-aa/.part-ab/... files, assembles them into the base
-# filename (stripping the .part-aa suffix).  Prints the assembled file path.
-# Prints nothing if no parts are found (the directory already has the full file).
+# devkit_assemble_parts DIR [PLATFORM_FILTER]
+# If DIR contains .part-aa/.part-ab/... files (optionally filtered by a
+# platform keyword), assembles them into the base filename (stripping
+# .part-aa).  Prints the assembled file path; prints nothing if no matching
+# parts exist.
+#
+# IMPORTANT: only the parts belonging to a single base file are concatenated
+# (pattern: "${target}.part-*"), so mixed-platform directories (e.g. both
+# .exe.part-* and .rpm.part-* in the same dir) are handled correctly.
 devkit_assemble_parts() {
     local dir="$1"
+    local filter="${2:-}"
+
     local first_part
-    first_part=$(ls "$dir"/*.part-aa 2>/dev/null | head -1)
+    if [[ -n "$filter" ]]; then
+        first_part=$(ls "$dir"/*.part-aa 2>/dev/null | grep -i "$filter" | head -1)
+    else
+        first_part=$(ls "$dir"/*.part-aa 2>/dev/null | head -1)
+    fi
     [[ -z "$first_part" ]] && return 0
 
     local target="${first_part%.part-aa}"
     if [[ ! -f "$target" ]]; then
         echo "==> Assembling split archive: $(basename "$target")..." >&2
-        cat "$dir"/*.part-* > "$target"
+        # Only cat the parts that belong to this specific base file.
+        cat "${target}.part-"* > "$target"
         echo "    $(du -sh "$target" 2>/dev/null | cut -f1) assembled" >&2
     fi
     echo "$target"
@@ -32,21 +44,34 @@ devkit_assemble_parts() {
 
 # ── File discovery ──────────────────────────────────────────────────────────
 # devkit_find_file DIR [PLATFORM]
-# Assembles split parts first, then finds the best installer file for the
-# current platform.  Prints the full path; exits non-zero if nothing found.
+# Returns the best installer file for PLATFORM in DIR.
+#
+# Search order:
+#   1. Platform-filtered split-part assembly (e.g. only linux .part-aa files)
+#   2. Unfiltered split-part assembly (single-platform dirs that have no
+#      platform keyword in the filename)
+#   3. Pre-assembled platform-specific file (contains the platform keyword)
+#   4. Any installer file (last-resort, no platform filter)
 devkit_find_file() {
     local dir="$1"
     local plat="${2:-$DEVKIT_PLATFORM}"
 
-    # Reassemble parts first (returns path if assembled, empty if none)
+    # 1. Assemble platform-specific split parts if present.
     local assembled
+    assembled=$(devkit_assemble_parts "$dir" "$plat")
+    if [[ -n "$assembled" ]]; then
+        echo "$assembled"
+        return 0
+    fi
+
+    # 2. No platform-specific parts — try unfiltered (single-platform dirs).
     assembled=$(devkit_assemble_parts "$dir")
     if [[ -n "$assembled" ]]; then
         echo "$assembled"
         return 0
     fi
 
-    # Platform-specific file (contains "windows" or "linux" in name)
+    # 3. Platform-specific pre-assembled file (contains platform keyword).
     local file
     file=$(ls "$dir" 2>/dev/null \
         | grep -v "\.part-" | grep -v "manifest" \
@@ -54,7 +79,7 @@ devkit_find_file() {
         | grep -i "$plat" | head -1)
     if [[ -n "$file" ]]; then echo "$dir/$file"; return 0; fi
 
-    # Any installer (no platform filter)
+    # 4. Any installer (last resort, no platform filter).
     file=$(ls "$dir" 2>/dev/null \
         | grep -v "\.part-" | grep -v "manifest" \
         | grep -iE "\.(exe|msi|tar\.xz|tar\.gz|zip|deb|rpm)$" \

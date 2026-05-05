@@ -81,11 +81,32 @@ echo ""
 
 INSTALLED=()
 FAILED=()
+DECOMP_DIR=""
+
+_cleanup_decomp() { [[ -n "$DECOMP_DIR" ]] && rm -rf "$DECOMP_DIR"; }
+trap '_cleanup_decomp' EXIT
 
 for vsix in "${VSIX_FILES[@]}"; do
     name="$(basename "$vsix")"
     printf "  [....] %s\n" "$name"
-    if code --install-extension "$vsix" --force 2>/dev/null; then
+
+    # .vsix files are ZIP archives. If the first two bytes are the gzip magic
+    # (1f 8b), the file was compressed a second time before being stored in
+    # prebuilt/. Decompress to a temp file so 'code' receives a valid ZIP.
+    install_from="$vsix"
+    magic="$(od -An -N2 -tx1 "$vsix" 2>/dev/null | tr -d ' \n')"
+    if [[ "$magic" == "1f8b" ]]; then
+        [[ -z "$DECOMP_DIR" ]] && DECOMP_DIR="$(mktemp -d)"
+        tmp_vsix="$DECOMP_DIR/$name"
+        if ! gunzip -c "$vsix" > "$tmp_vsix" 2>/dev/null; then
+            printf "  [!!]  FAILED (gunzip error): %s\n" "$name" >&2
+            FAILED+=("$name")
+            continue
+        fi
+        install_from="$tmp_vsix"
+    fi
+
+    if code --install-extension "$install_from" --force 2>/dev/null; then
         printf "  [OK]  %s\n" "$name"
         INSTALLED+=("$name")
     else

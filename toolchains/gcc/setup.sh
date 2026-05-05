@@ -13,6 +13,7 @@ if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygw
 else
     PLATFORM="linux"
     VERSION="toolset-15"
+    GCC_VERSION="15.1.1"  # actual compiler release inside gcc-toolset-15 RPMs
     DEFAULT_PREFIX="/opt/rh/gcc-toolset-15"
 fi
 
@@ -89,7 +90,7 @@ else
         fi
         cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
 tool=${TOOL}
-version=${VERSION}
+version=${GCC_VERSION}
 platform=${PLATFORM}
 install_prefix=${PREFIX}
 installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
