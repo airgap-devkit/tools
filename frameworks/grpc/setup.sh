@@ -46,7 +46,7 @@ done
 # ---------------------------------------------------------------------------
 # install-mode setup
 # ---------------------------------------------------------------------------
-source "${REPO_ROOT}/scripts/install-mode.sh"
+source "${REPO_ROOT}/scripts/internal/install-mode.sh"
 install_mode_init "${TOOL_NAME}" "${VERSION}" "$@"
 install_log_capture_start
 

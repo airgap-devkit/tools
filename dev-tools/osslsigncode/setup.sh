@@ -21,7 +21,7 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     ARCHIVE=$(devkit_find_file "$PARTS_DIR" windows)
     if [[ -z "$ARCHIVE" ]]; then
         echo "ERROR: No Windows archive found in $PARTS_DIR" >&2
-        echo "Run: bash scripts/download-prebuilt.sh --small" >&2
+        echo "Run: bash scripts/internal/download-prebuilt.sh --small" >&2
         exit 1
     fi
 
