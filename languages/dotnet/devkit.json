@@ -13,5 +13,6 @@
   "source": "default",
   "check_cmd": "dotnet --version",
   "check_binary": "dotnet",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "check_url": "https://dotnet.microsoft.com/en-us/download/dotnet"
 }

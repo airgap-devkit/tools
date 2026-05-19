@@ -12,5 +12,8 @@
   "sort_order": 11,
   "check_cmd": "ninja --version",
   "check_binary": "ninja",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "github_repo": "ninja-build/ninja",
+  "asset_match": "ninja-win.zip",
+  "asset_match_linux": "ninja-linux.zip"
 }

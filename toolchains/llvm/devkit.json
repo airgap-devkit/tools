@@ -12,5 +12,9 @@
   "sort_order": 10,
   "check_cmd": "clang --version",
   "check_binary": "clang",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "github_repo": "llvm/llvm-project",
+  "tag_prefix": "llvmorg-",
+  "asset_match": "x86_64-pc-windows-msvc.tar.xz",
+  "asset_match_linux": "Linux-X64.tar.xz"
 }

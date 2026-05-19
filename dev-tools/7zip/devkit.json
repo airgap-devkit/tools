@@ -12,5 +12,8 @@
   "uses_prebuilt": true,
   "sort_order": 50,
   "source": "default",
-  "check_cmd": "7z i 2>&1"
+  "check_cmd": "7z i 2>&1",
+  "github_repo": "ip7z/7zip",
+  "asset_match": "x64.exe",
+  "asset_match_linux": "linux-x64.tar.xz"
 }

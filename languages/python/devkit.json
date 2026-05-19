@@ -13,5 +13,8 @@
   "source": "default",
   "check_cmd": "python --version",
   "check_cmd_windows": "python --version",
-  "check_cmd_linux": "python3 --version 2>&1 || python --version 2>&1"
+  "check_cmd_linux": "python3 --version 2>&1 || python --version 2>&1",
+  "check_url": "https://www.python.org/downloads/",
+  "check_url_linux": "https://github.com/indygreg/python-build-standalone/releases",
+  "platform_note": "Windows from python.org; Linux portable builds from indygreg/python-build-standalone (date-stamped tags, manual mapping to CPython version)"
 }

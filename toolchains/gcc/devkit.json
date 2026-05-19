@@ -12,5 +12,9 @@
   "sort_order": 12,
   "check_cmd": "gcc --version",
   "check_binary": "gcc",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "github_repo": "brechtsanders/winlibs_mingw",
+  "asset_match": "posix-seh",
+  "check_url": "https://github.com/brechtsanders/winlibs_mingw/releases",
+  "platform_note": "Windows check uses WinLibs GitHub releases; Linux RPMs from Red Hat CDN (manual check)"
 }

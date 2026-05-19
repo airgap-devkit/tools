@@ -13,5 +13,8 @@
   "source": "default",
   "check_cmd": "osslsigncode --version 2>&1",
   "check_binary": "osslsigncode",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "github_repo": "mtrojnar/osslsigncode",
+  "asset_match": "windows-x64-mingw.zip",
+  "asset_match_linux": ".tar.gz"
 }

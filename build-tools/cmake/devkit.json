@@ -13,5 +13,8 @@
   "source": "default",
   "check_cmd": "cmake --version",
   "check_binary": "cmake",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "github_repo": "Kitware/CMake",
+  "asset_match": "windows-x86_64.zip",
+  "asset_match_linux": "linux-x86_64.tar.gz"
 }

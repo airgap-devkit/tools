@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 40,
   "source": "default",
-  "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH - check install path'"
+  "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH - check install path'",
+  "check_url": "https://github.com/grpc/grpc/releases",
+  "platform_note": "no prebuilt binary releases; prebuilt is maintainer-built from source"
 }

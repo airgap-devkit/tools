@@ -13,5 +13,6 @@
   "source": "default",
   "check_cmd": "sqlite3 --version",
   "check_binary": "sqlite3",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "check_url": "https://www.sqlite.org/download.html"
 }

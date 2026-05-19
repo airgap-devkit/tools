@@ -13,5 +13,8 @@
   "source": "default",
   "check_cmd": "conan --version",
   "check_binary": "conan",
-  "check_args": ["--version"]
+  "check_args": ["--version"],
+  "github_repo": "conan-io/conan",
+  "asset_match": "windows-x86_64",
+  "asset_match_linux": "linux-x86_64"
 }

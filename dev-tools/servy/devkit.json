@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 51,
   "source": "default",
-  "check_cmd": "Servy --version"
+  "check_cmd": "Servy --version",
+  "github_repo": "aelassas/servy",
+  "asset_match": "x64-installer.exe"
 }

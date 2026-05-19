@@ -11,5 +11,7 @@
   "uses_prebuilt": true,
   "sort_order": 57,
   "source": "default",
-  "check_cmd": "notepad++.exe --help 2>&1 | head -1 || true"
+  "check_cmd": "notepad++.exe --help 2>&1 | head -1 || true",
+  "github_repo": "notepad-plus-plus/notepad-plus-plus",
+  "asset_match": "Installer.x64.exe"
 }

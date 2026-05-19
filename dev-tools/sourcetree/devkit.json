@@ -11,5 +11,6 @@
   "uses_prebuilt": true,
   "sort_order": 59,
   "source": "default",
-  "check_cmd": "sourcetree.exe --version 2>&1 | head -1 || true"
+  "check_cmd": "sourcetree.exe --version 2>&1 | head -1 || true",
+  "check_url": "https://www.sourcetreeapp.com/"
 }

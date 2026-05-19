@@ -10,5 +10,7 @@
   "estimate": "~10 sec",
   "uses_prebuilt": true,
   "sort_order": 15,
-  "check_cmd": "lcov --version"
+  "check_cmd": "lcov --version",
+  "github_repo": "linux-test-project/lcov",
+  "asset_match_linux": "lcov-"
 }
