@@ -2,7 +2,7 @@
   "hidden": true,
   "id": "7zip",
   "name": "7-Zip",
-  "version": "26.01",
+  "version": "26.02",
   "category": "Developer Tools",
   "platform": "both",
   "description": "High-compression file archiver supporting 7z, ZIP, TAR, GZip, and many other formats.",
@@ -14,6 +14,7 @@
   "source": "default",
   "check_cmd": "7z i 2>&1",
   "github_repo": "ip7z/7zip",
+  "tag_prefix": "",
   "asset_match": "x64.exe",
   "asset_match_linux": "linux-x64.tar.xz"
 }

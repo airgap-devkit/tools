@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="llvm"
-VERSION="22.1.4"
+VERSION="22.1.8"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 

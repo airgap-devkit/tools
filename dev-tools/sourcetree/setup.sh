@@ -8,7 +8,7 @@ if [[ "${AIRGAP_OS:-}" != "windows" && "$OSTYPE" != "msys" && "$OSTYPE" != "cygw
 fi
 
 TOOL="sourcetree"
-VERSION="3.4.30"
+VERSION="3.4.31"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="vscode"
-VERSION="1.117.0"
+VERSION="1.127.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"

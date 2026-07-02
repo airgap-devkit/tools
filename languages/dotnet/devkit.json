@@ -1,7 +1,7 @@
 {
   "id": "dotnet",
   "name": ".NET SDK",
-  "version": "10.0.203",
+  "version": "10.0.301",
   "category": "Languages",
   "platform": "both",
   "description": "Cross-platform SDK for building and running .NET applications in C#, F#, and Visual Basic.",
@@ -13,6 +13,10 @@
   "source": "default",
   "check_cmd": "dotnet --version",
   "check_binary": "dotnet",
-  "check_args": ["--version"],
-  "check_url": "https://dotnet.microsoft.com/en-us/download/dotnet"
+  "check_args": [
+    "--version"
+  ],
+  "check_url": "https://dotnet.microsoft.com/en-us/download/dotnet",
+  "download_url_template_windows": "https://builds.dotnet.microsoft.com/dotnet/Sdk/{version}/dotnet-sdk-{version}-win-x64.zip",
+  "download_url_template_linux": "https://builds.dotnet.microsoft.com/dotnet/Sdk/{version}/dotnet-sdk-{version}-linux-x64.tar.gz"
 }

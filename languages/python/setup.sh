@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="python"
-VERSION="3.14.4"
+VERSION="3.14.6"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/languages/python"

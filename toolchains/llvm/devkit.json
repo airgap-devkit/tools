@@ -1,7 +1,7 @@
 {
   "id": "llvm",
   "name": "LLVM / Clang",
-  "version": "22.1.4",
+  "version": "22.1.8",
   "category": "Toolchains",
   "platform": "both",
   "description": "LLVM/Clang compiler toolchain. Includes clang, clang++, clang-format, clang-tidy, lld, and LLVM tools.",
@@ -12,7 +12,9 @@
   "sort_order": 10,
   "check_cmd": "clang --version",
   "check_binary": "clang",
-  "check_args": ["--version"],
+  "check_args": [
+    "--version"
+  ],
   "github_repo": "llvm/llvm-project",
   "tag_prefix": "llvmorg-",
   "asset_match": "x86_64-pc-windows-msvc.tar.xz",

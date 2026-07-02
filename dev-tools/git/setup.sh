@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="git"
-VERSION="2.54.0"
+VERSION="2.55.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"

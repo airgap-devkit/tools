@@ -7,13 +7,13 @@ PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 
 if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     PLATFORM="windows"
-    VERSION="15.2.0"
-    ARCHIVE="winlibs-x86_64-posix-seh-gcc-${VERSION}-mingw-w64ucrt-14.0.0-r7.tar.xz"
+    VERSION="16.1.0"
+    ARCHIVE="winlibs-x86_64-posix-seh-gcc-${VERSION}-mingw-w64ucrt-14.0.0-r3.zip"
     DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/winlibs-gcc-ucrt"
 else
     PLATFORM="linux"
     VERSION="toolset-15"
-    GCC_VERSION="15.1.1"  # actual compiler release inside gcc-toolset-15 RPMs
+    GCC_VERSION="16.1.0"  # actual compiler release inside gcc-toolset-15 RPMs
     DEFAULT_PREFIX="/opt/rh/gcc-toolset-15"
 fi
 
@@ -36,10 +36,27 @@ if [[ "$PLATFORM" == "windows" ]]; then
         echo "ERROR: No parts found for $ARCHIVE" >&2
         exit 1
     fi
-    echo "    Found ${#PARTS[@]} parts. Extracting to ${PREFIX}..."
+    echo "    Found ${#PARTS[@]} parts. Assembling and extracting to ${PREFIX}..."
     MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "$PREFIX" 2>/dev/null || true
     PREFIX="$(cygpath -u -- "$PREFIX")"
-    cat "${PARTS[@]}" | tar -xJ --strip-components=1 -C "$PREFIX"
+
+    # Assemble split zip, extract (strip the single top-level mingw64/ dir)
+    TMP_ZIP=$(mktemp --suffix=.zip)
+    TMP_DIR=$(mktemp -d)
+    cat "${PARTS[@]}" > "$TMP_ZIP"
+    if command -v unzip &>/dev/null; then
+        unzip -q "$TMP_ZIP" -d "$TMP_DIR"
+    else
+        fw="$(cygpath -w "$TMP_ZIP")"
+        dw="$(cygpath -w "$TMP_DIR")"
+        powershell.exe -NoProfile -NonInteractive -Command \
+            "Expand-Archive -Force -Path '$fw' -DestinationPath '$dw'"
+    fi
+    rm -f "$TMP_ZIP"
+    for item in "$TMP_DIR"/*/; do
+        cp -a "$item/." "$PREFIX/"
+    done
+    rm -rf "$TMP_DIR"
 
     cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
 tool=${TOOL}

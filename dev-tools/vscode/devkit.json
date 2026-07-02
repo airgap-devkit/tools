@@ -1,7 +1,7 @@
 {
   "id": "vscode",
   "name": "Visual Studio Code",
-  "version": "1.117.0",
+  "version": "1.127.0",
   "category": "Developer Tools",
   "platform": "both",
   "description": "Lightweight, extensible source code editor with built-in Git, debugging, IntelliSense, and a rich extension ecosystem. Windows: Inno Setup installer. Linux: RPM package for RHEL 8/9.",
@@ -13,7 +13,9 @@
   "source": "default",
   "check_cmd": "code --version 2>&1 | head -1",
   "check_binary": "code",
-  "check_args": ["--version"],
+  "check_args": [
+    "--version"
+  ],
   "check_url": "https://code.visualstudio.com/updates",
   "download_url_template_windows": "https://update.code.visualstudio.com/{version}/win32-x64-user/stable",
   "download_url_template_linux": "https://update.code.visualstudio.com/{version}/linux-rpm-x64/stable"

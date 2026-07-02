@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="conan"
-VERSION="2.28.0"
+VERSION="2.30.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/conan/${VERSION}"

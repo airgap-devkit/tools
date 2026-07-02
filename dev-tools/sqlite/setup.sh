@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="sqlite"
-VERSION="3.53.0"
+VERSION="3.53.3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/sqlite/${VERSION}"

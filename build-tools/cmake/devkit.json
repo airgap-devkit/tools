@@ -1,7 +1,7 @@
 {
   "id": "cmake",
   "name": "CMake",
-  "version": "4.3.2",
+  "version": "4.3.4",
   "category": "Build Tools",
   "platform": "both",
   "description": "Cross-platform build system generator that manages the compilation process in a compiler-independent manner.",
@@ -13,7 +13,9 @@
   "source": "default",
   "check_cmd": "cmake --version",
   "check_binary": "cmake",
-  "check_args": ["--version"],
+  "check_args": [
+    "--version"
+  ],
   "github_repo": "Kitware/CMake",
   "asset_match": "windows-x86_64.zip",
   "asset_match_linux": "linux-x86_64.tar.gz"

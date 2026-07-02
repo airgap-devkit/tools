@@ -1,7 +1,7 @@
 {
   "id": "grpc",
   "name": "gRPC",
-  "version": "1.80.0",
+  "version": "1.81.1",
   "category": "Frameworks",
   "platform": "windows",
   "description": "High-performance RPC framework for building distributed C++ services using Protocol Buffers.",

@@ -15,6 +15,7 @@
   "check_binary": "osslsigncode",
   "check_args": ["--version"],
   "github_repo": "mtrojnar/osslsigncode",
+  "tag_prefix": "",
   "asset_match": "windows-x64-mingw.zip",
   "asset_match_linux": ".tar.gz"
 }

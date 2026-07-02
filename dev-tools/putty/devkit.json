@@ -1,7 +1,7 @@
 {
   "id": "putty",
   "name": "PuTTY",
-  "version": "0.83",
+  "version": "0.84",
   "category": "Developer Tools",
   "platform": "both",
   "description": "SSH, Telnet, and serial console client. Windows: full GUI installer. Linux: CLI tools (plink, pscp, psftp, puttygen) built from source.",

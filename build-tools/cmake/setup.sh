@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="cmake"
-VERSION="4.3.2"
+VERSION="4.3.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/build-tools/cmake/${VERSION}"
