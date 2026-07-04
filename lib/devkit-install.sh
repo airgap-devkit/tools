@@ -4,11 +4,101 @@
 #   source "$(dirname "${BASH_SOURCE[0]}")/../../lib/devkit-install.sh"
 
 # ── Platform detection ──────────────────────────────────────────────────────
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+# AIRGAP_OS (set by the Go server) is authoritative. Variable refs are guarded
+# so this file is safe to source under `set -u`.
+if [[ "${AIRGAP_OS:-}" == "linux" ]]; then
+    DEVKIT_PLATFORM="linux"
+elif [[ "${AIRGAP_OS:-}" == "windows" || "${OSTYPE:-}" == "msys" || "${OSTYPE:-}" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
     DEVKIT_PLATFORM="windows"
 else
     DEVKIT_PLATFORM="linux"
 fi
+
+# ── glibc-aware Linux asset selection ───────────────────────────────────────
+# RHEL 8 ships glibc 2.28; RHEL 9 ships 2.34. A binary linked against a newer
+# glibc will not run on an older host, so tools that ship a dedicated older-libc
+# build select it here instead of duplicating the ldd probe in every setup.sh.
+
+# devkit_glibc_minor — echo the glibc minor version (e.g. 28 for 2.28), or 0 if
+# ldd is unavailable (treated as "old" so the safer build is chosen).
+devkit_glibc_minor() {
+    local minor
+    minor=$(ldd --version 2>/dev/null | awk 'NR==1{split($NF,v,"."); print int(v[2])}')
+    echo "${minor:-0}"
+}
+
+# devkit_linux_asset MODERN_ASSET OLD_ASSET [THRESHOLD]
+# Echo OLD_ASSET when the glibc minor version is below THRESHOLD (default 32,
+# i.e. anything older than glibc 2.32 such as RHEL 8) or when ldd is missing;
+# otherwise echo MODERN_ASSET.
+devkit_linux_asset() {
+    local modern="$1" old="$2" threshold="${3:-32}"
+    local minor; minor=$(devkit_glibc_minor)
+    if (( minor < threshold )); then echo "$old"; else echo "$modern"; fi
+}
+
+# ── Integrity verification ──────────────────────────────────────────────────
+# devkit_verify_sha256 FILE EXPECTED_HEX
+# Aborts (exit 1) on mismatch; returns 0 on match. If no sha256 tool exists on
+# the host, warns and returns 0 rather than blocking an otherwise valid install.
+devkit_verify_sha256() {
+    local file="$1" expected="$2"
+    [[ -f "$file" ]] || { echo "ERROR: verify: file not found: $file" >&2; exit 1; }
+    local actual
+    if command -v sha256sum &>/dev/null; then
+        actual=$(sha256sum "$file" | awk '{print $1}')
+    elif command -v shasum &>/dev/null; then
+        actual=$(shasum -a 256 "$file" | awk '{print $1}')
+    else
+        echo "    [WARN] no sha256 tool available; skipping integrity check for $(basename "$file")" >&2
+        return 0
+    fi
+    if [[ "${actual,,}" != "${expected,,}" ]]; then
+        echo "ERROR: checksum mismatch for $(basename "$file")" >&2
+        echo "       expected: ${expected}" >&2
+        echo "       actual:   ${actual}" >&2
+        exit 1
+    fi
+    echo "    [OK] sha256 verified: $(basename "$file")"
+}
+
+# devkit_manifest_sha256 MANIFEST_JSON ARCHIVE_NAME
+# Extract the expected sha256 for ARCHIVE_NAME from a prebuilt manifest.json.
+# Portable (grep only — no python/jq): the manifest lists each platform as
+# {"archive": "<name>", "sha256": "<hex>"}, so the hash is the first real sha256
+# that follows the line naming the archive. Matches only a genuine
+# "sha256": "<64-hex>" entry — never the "part_sha256" map that split archives
+# carry (those have no whole-file hash) — and prints empty when none is found.
+devkit_manifest_sha256() {
+    local manifest="$1" archive="$2"
+    [[ -f "$manifest" ]] || return 0
+    # Trailing `|| true`: a no-match must yield empty output with exit 0, so a
+    # caller's `expected="$(devkit_manifest_sha256 …)"` never trips `set -e`.
+    grep -A3 -F "\"${archive}\"" "$manifest" 2>/dev/null \
+        | grep -oE '"sha256"[[:space:]]*:[[:space:]]*"[0-9a-fA-F]{64}"' \
+        | head -1 \
+        | grep -oE '[0-9a-fA-F]{64}' || true
+}
+
+# devkit_verify_archive MANIFEST_JSON ARCHIVE_PATH
+# Look up ARCHIVE_PATH's expected sha256 in MANIFEST_JSON and verify it. Warns
+# (does not fail) when the manifest or the hash entry is missing, so tools whose
+# manifests predate checksum coverage still install; a present-but-mismatched
+# hash is a hard failure.
+devkit_verify_archive() {
+    local manifest="$1" archive_path="$2"
+    local base; base="$(basename "$archive_path")"
+    if [[ ! -f "$manifest" ]]; then
+        echo "    [WARN] no manifest at ${manifest}; skipping integrity check" >&2
+        return 0
+    fi
+    local expected; expected="$(devkit_manifest_sha256 "$manifest" "$base")"
+    if [[ -z "$expected" ]]; then
+        echo "    [WARN] no sha256 for ${base} in manifest; skipping integrity check" >&2
+        return 0
+    fi
+    devkit_verify_sha256 "$archive_path" "$expected"
+}
 
 # ── Split-archive assembly ──────────────────────────────────────────────────
 # devkit_assemble_parts DIR [PLATFORM_FILTER]
@@ -40,6 +130,24 @@ devkit_assemble_parts() {
         echo "    $(du -sh "$target" 2>/dev/null | cut -f1) assembled" >&2
     fi
     echo "$target"
+}
+
+# devkit_resolve_archive DIR BASE_NO_EXT
+# Locate the staged archive named BASE_NO_EXT + a supported extension, preferring
+# the native, no-admin formats (.zip / .tar.gz) over legacy .tar.xz. Assembles
+# split parts (BASE.ext.part-aa...) into the whole file when it is absent.
+# Echoes the resolved archive path; returns 1 if nothing matches.
+devkit_resolve_archive() {
+    local dir="$1" base="$2" ext f
+    for ext in zip tar.gz tar.xz; do
+        f="$dir/$base.$ext"
+        if [[ -f "$f" ]]; then echo "$f"; return 0; fi
+        if ls "$dir/$base.$ext".part-aa &>/dev/null; then
+            [[ -f "$f" ]] || cat "$dir/$base.$ext".part-* > "$f"
+            echo "$f"; return 0
+        fi
+    done
+    return 1
 }
 
 # ── File discovery ──────────────────────────────────────────────────────────
@@ -234,6 +342,26 @@ devkit_extract() {
     esac
 }
 
+# devkit_install_archive ARCHIVE DEST
+# Extract ARCHIVE and place its payload into DEST, auto-stripping a SOLE
+# top-level wrapper directory (e.g. cmake-4.3.3-linux-x86_64/, bin/, python/) —
+# but never a single bare file (e.g. ninja). Extraction happens on the target
+# host, so POSIX symlinks are recreated correctly (unlike repacking on Windows).
+# This removes the need for per-tool/per-version --strip-components values.
+devkit_install_archive() {
+    local archive="$1" dest="$2"
+    local tmp; tmp="$(mktemp -d)"
+    devkit_extract "$archive" "$tmp" 0
+    local root="$tmp"
+    local entries=("$tmp"/*)
+    if [[ ${#entries[@]} -eq 1 && -d "${entries[0]}" ]]; then
+        root="${entries[0]}"
+    fi
+    mkdir -p "$dest"
+    ( shopt -s dotglob; mv "$root"/* "$dest"/ )
+    rm -rf "$tmp"
+}
+
 # ── Package manager installers ──────────────────────────────────────────────
 # devkit_install_deb POSIX_PATH [DEST_PREFIX]
 # Installs a .deb.  Uses dpkg if available; falls back to manual extraction.
@@ -271,9 +399,11 @@ devkit_install_rpm() {
 }
 
 # ── Receipt writing ─────────────────────────────────────────────────────────
-# devkit_write_receipt TOOL VERSION PLATFORM PREFIX
+# devkit_write_receipt TOOL VERSION PLATFORM PREFIX [EXTRA_LINE ...]
+# Any additional arguments are appended verbatim as extra key=value receipt
+# lines (e.g. "includes=clang,clang-format").
 devkit_write_receipt() {
-    local tool="$1" ver="$2" plat="$3" prefix="$4"
+    local tool="$1" ver="$2" plat="$3" prefix="$4"; shift 4
     mkdir -p "$prefix"
     cat > "$prefix/INSTALL_RECEIPT.txt" << RECEIPT
 tool=${tool}
@@ -282,6 +412,10 @@ platform=${plat}
 install_prefix=${prefix}
 installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 RECEIPT
+    local line
+    for line in "$@"; do
+        printf '%s\n' "$line" >> "$prefix/INSTALL_RECEIPT.txt"
+    done
 }
 
 # ── Prefix / arg helpers ────────────────────────────────────────────────────

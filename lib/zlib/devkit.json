@@ -1,0 +1,20 @@
+{
+  "id": "zlib",
+  "name": "zlib",
+  "version": "1.3.2",
+  "category": "Frameworks",
+  "platform": "both",
+  "description": "zlib compression library — the reference gzip/DEFLATE implementation. Vendored source, built and installed via CMake (headers + static and shared libs).",
+  "setup": "setup.sh",
+  "receipt_name": "zlib",
+  "estimate": "~30s (source build)",
+  "uses_prebuilt": true,
+  "sort_order": 45,
+  "source": "default",
+  "check_cmd": "ls \"${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/zlib/include/zlib.h\" 2>/dev/null || ls \"$HOME/.local/share/airgap-cpp-devkit/zlib/include/zlib.h\" 2>/dev/null || ls /opt/airgap-cpp-devkit/zlib/include/zlib.h 2>/dev/null || echo 'zlib.h not found - check install path'",
+  "github_repo": "madler/zlib",
+  "tag_prefix": "v",
+  "asset_match": ".zip",
+  "asset_match_linux": ".tar.gz",
+  "platform_note": "vendored source archive; requires CMake + a C toolchain (bundled in the devkit)"
+}

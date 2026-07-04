@@ -1,25 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+TOOL="gdb"
+VERSION="17.1"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
+
 # GDB is Linux-only (source build)
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     echo "GDB source build is a Linux-only operation. Skipping on Windows." >&2
     exit 0
 fi
 
-TOOL="gdb"
-VERSION="17.1"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 SOURCE_ARCHIVE="$SOURCES_DIR/gdb-${VERSION}.tar.gz"
 
-if [[ "$(id -u)" == "0" ]]; then
-    DEFAULT_PREFIX="/opt/airgap-cpp-devkit/gdb"
-else
-    DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/gdb"
-fi
-
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 JOBS="${MAKE_JOBS:-$(nproc)}"
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -79,14 +75,7 @@ make -j"$JOBS" 2>&1
 echo "==> Installing..."
 make install 2>&1
 
-mkdir -p "$(dirname "$PREFIX/INSTALL_RECEIPT.txt")"
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=linux
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> GDB ${VERSION} installed to ${PREFIX}"
 echo "    Binary: ${PREFIX}/bin/gdb"

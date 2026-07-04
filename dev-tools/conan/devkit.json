@@ -19,5 +19,6 @@
   "github_repo": "conan-io/conan",
   "tag_prefix": "",
   "asset_match": "windows-x86_64",
-  "asset_match_linux": "linux-x86_64"
+  "asset_match_linux": "linux-x86_64",
+  "asset_exclude": "installer"
 }

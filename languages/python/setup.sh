@@ -4,25 +4,18 @@ set -euo pipefail
 TOOL="python"
 VERSION="3.14.6"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/languages/python"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     # Use full package (35MB) for devkit; embed (12MB) is also available
-    ARCHIVE="python-${VERSION}-amd64.zip"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/python"
+    ARCHIVE_BASE="python-${VERSION}-amd64"
 else
-    PLATFORM="linux"
-    ARCHIVE="cpython-${VERSION}-linux-x64.tar.xz"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/python"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/python"
-    fi
+    ARCHIVE_BASE="cpython-${VERSION}-linux-x64"
 fi
 
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 PIP_ONLY=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -43,14 +36,10 @@ if [[ "$PIP_ONLY" == "true" ]]; then
     fi
 
     # Locate the devkit-installed Python; fall back to PATH.
-    if [[ "$PLATFORM" == "linux" ]]; then
-        if [[ "$(id -u)" == "0" ]]; then
-            _py="/opt/airgap-cpp-devkit/python/bin/python3"
-        else
-            _py="${HOME}/.local/share/airgap-cpp-devkit/python/bin/python3"
-        fi
+    if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
+        _py="$(devkit_default_prefix "$TOOL")/bin/python3"
     else
-        _py="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/python/python3.exe"
+        _py="$(devkit_default_prefix "$TOOL")/python3.exe"
     fi
     if [[ ! -x "$_py" ]]; then
         _py="$(command -v python3 2>/dev/null || command -v python 2>/dev/null || true)"
@@ -65,7 +54,7 @@ if [[ "$PIP_ONLY" == "true" ]]; then
     WHEEL_FILES=()
     while IFS= read -r whl; do
         bname="$(basename "$whl")"
-        if [[ "$PLATFORM" == "linux" ]] && [[ "$bname" == *-win_amd64* || "$bname" == *-win32* ]]; then
+        if [[ "$DEVKIT_PLATFORM" == "linux" ]] && [[ "$bname" == *-win_amd64* || "$bname" == *-win32* ]]; then
             echo "    Skipping Windows-only wheel: $bname"
             continue
         fi
@@ -79,43 +68,30 @@ if [[ "$PIP_ONLY" == "true" ]]; then
 
     "$_py" -m pip install --no-deps --no-index "${WHEEL_FILES[@]}"
 
-    mkdir -p "$PREFIX"
-    cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=pip-packages
-version=vendored
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+    devkit_write_receipt "pip-packages" "vendored" "$DEVKIT_PLATFORM" "$PREFIX"
 
     echo "==> Pip packages installed."
     exit 0
 fi
 
-echo "==> Installing Python ${VERSION} (${PLATFORM}) to ${PREFIX}"
+echo "==> Installing Python ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}"
 
-if [[ "$PLATFORM" == "windows" ]]; then
-    mkdir -p "$PREFIX"
+mkdir -p "$PREFIX"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     PREFIX="$(cygpath -u -- "$PREFIX")"
-else
-    mkdir -p "$PREFIX"
 fi
 
-if [[ "$PLATFORM" == "windows" ]]; then
-    ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
-    if [[ ! -f "$ARCHIVE_PATH" ]]; then
-        echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
-    fi
-    unzip -q "$ARCHIVE_PATH" -d "$PREFIX"
+ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")" \
+    || { echo "ERROR: Archive not found for ${ARCHIVE_BASE} in $PARTS_DIR" >&2; exit 1; }
+devkit_verify_archive "$PARTS_DIR/manifest.json" "$ARCHIVE_PATH"
+
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    # Windows full/embeddable package has the interpreter at the archive root.
+    devkit_install_archive "$ARCHIVE_PATH" "$PREFIX"
 else
-    PARTS=("$PARTS_DIR/${ARCHIVE}.part-"*)
-    if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
-        echo "ERROR: No parts found for ${ARCHIVE}" >&2; exit 1
-    fi
-    echo "    Found ${#PARTS[@]} parts."
-    # Archive is structured as ./python/bin/..., so strip 2 components
-    # (the leading './' and the 'python/' directory) to land in $PREFIX.
-    cat "${PARTS[@]}" | tar -xJ --strip-components=2 -C "$PREFIX"
+    # Linux .tar.gz is transcoded (symlinks preserved); the installer auto-strips
+    # the upstream python/ wrapper.
+    devkit_install_archive "$ARCHIVE_PATH" "$PREFIX"
     find "$PREFIX/bin" -maxdepth 1 -type f -exec chmod +x {} +
 
     # Create python3 -> python3.14 symlink if absent (the archive only ships
@@ -125,13 +101,7 @@ else
     fi
 fi
 
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> Python ${VERSION} installed to ${PREFIX}"
 echo "    Add ${PREFIX} (Windows) or ${PREFIX}/bin (Linux) to your PATH."

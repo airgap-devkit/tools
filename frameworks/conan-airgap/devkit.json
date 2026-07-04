@@ -1,0 +1,13 @@
+{
+  "id": "conan-airgap",
+  "name": "Conan Air-Gap Kit",
+  "version": "1.0.0",
+  "category": "Frameworks",
+  "platform": "both",
+  "description": "Portable offline Conan 2.30.0 environment — seed C/C++ packages on a connected host, import into air-gapped systems, with CMake + Eclipse integration and per-network profiles.",
+  "setup": "setup.sh",
+  "receipt_name": "conan-airgap",
+  "estimate": "~5s",
+  "uses_prebuilt": false,
+  "sort_order": 50
+}

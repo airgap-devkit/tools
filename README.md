@@ -100,7 +100,7 @@ airgap-devkit-tools/
     python/             devkit.json  (Python 3.14.4)
     dotnet/             devkit.json  (.NET SDK 10.0.201)
   frameworks/
-    grpc/               devkit.json  (gRPC 1.80.0)
+    grpc/               devkit.json  (gRPC 1.81.1, per MSVC toolset v142/v143/v145)
   dev-tools/
     servy/              devkit.json  (Servy 7.9)
     conan/              devkit.json  (Conan 2.27.1)

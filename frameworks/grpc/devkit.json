@@ -4,14 +4,39 @@
   "version": "1.81.1",
   "category": "Frameworks",
   "platform": "windows",
-  "description": "High-performance RPC framework for building distributed C++ services using Protocol Buffers.",
+  "description": "High-performance RPC framework for building distributed C++ services using Protocol Buffers. Prebuilt per MSVC toolset — pick the package that matches your Visual Studio version.",
   "setup": "setup.sh",
   "receipt_name": "grpc",
-  "estimate": "~1 min (prebuilt) / ~40 min (source)",
+  "estimate": "~1 min (prebuilt)",
   "uses_prebuilt": true,
   "sort_order": 40,
   "source": "default",
   "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH - check install path'",
   "check_url": "https://github.com/grpc/grpc/releases",
-  "platform_note": "no prebuilt binary releases; prebuilt is maintainer-built from source"
+  "platform_note": "prebuilt release packages are maintainer-built from source (dso-suite), ABI-locked per MSVC toolset",
+  "variant_label": "Visual Studio version",
+  "variants": [
+    {
+      "id": "v143",
+      "label": "Visual Studio 2022 (MSVC v143)",
+      "toolset": "v143",
+      "archive": "grpc-1.81.1-msvc143-x64-release.zip",
+      "setup_args": ["--toolset", "v143"],
+      "default": true
+    },
+    {
+      "id": "v145",
+      "label": "Visual Studio 2026 (MSVC v145)",
+      "toolset": "v145",
+      "archive": "grpc-1.81.1-msvc145-x64-release.zip",
+      "setup_args": ["--toolset", "v145"]
+    },
+    {
+      "id": "v142",
+      "label": "Visual Studio 2019 (MSVC v142)",
+      "toolset": "v142",
+      "archive": "grpc-1.81.1-msvc142-x64-release.zip",
+      "setup_args": ["--toolset", "v142"]
+    }
+  ]
 }

@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SourceTree is Windows-only
-if [[ "${AIRGAP_OS:-}" != "windows" && "$OSTYPE" != "msys" && "$OSTYPE" != "cygwin" && "${OS:-}" != "Windows_NT" ]]; then
-    echo "SourceTree is a Windows-only tool. Skipping on Linux." >&2
-    exit 0
-fi
-
 TOOL="sourcetree"
 VERSION="3.4.31"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
+
+# SourceTree is Windows-only
+if [[ "$DEVKIT_PLATFORM" != "windows" ]]; then
+    echo "SourceTree is a Windows-only tool. Skipping on Linux." >&2
+    exit 0
+fi
 
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix sourcetree)}"

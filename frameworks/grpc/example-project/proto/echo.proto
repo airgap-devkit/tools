@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+// This is YOUR service definition. Rename the package/service/messages to suit
+// your project, then regenerate C++ from it (CMake does this automatically, or
+// run protoc by hand -- see README.md).
+package echo;
+
+service Echo {
+  // A simple unary RPC: send a message, get one back.
+  rpc Say (EchoRequest) returns (EchoReply) {}
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoReply {
+  string message = 1;
+}

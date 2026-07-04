@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Notepad++ is Windows-only
-if [[ "${AIRGAP_OS:-}" != "windows" && "$OSTYPE" != "msys" && "$OSTYPE" != "cygwin" && "${OS:-}" != "Windows_NT" ]]; then
-    echo "Notepad++ is a Windows-only tool. Skipping on Linux." >&2
-    exit 0
-fi
-
 TOOL="notepadpp"
 VERSION="8.9.6.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
+
+# Notepad++ is Windows-only
+if [[ "$DEVKIT_PLATFORM" != "windows" ]]; then
+    echo "Notepad++ is a Windows-only tool. Skipping on Linux." >&2
+    exit 0
+fi
 
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix notepadpp)}"

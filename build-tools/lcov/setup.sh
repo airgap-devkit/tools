@@ -1,30 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+TOOL="lcov"
+VERSION="2.4"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
+PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
+
 # lcov is Linux-only
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     echo "lcov is a Linux-only tool. Skipping on Windows." >&2
     exit 0
 fi
 
-TOOL="lcov"
-VERSION="2.4"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
-
-if [[ "$(id -u)" == "0" ]]; then
-    DEFAULT_PREFIX="/opt/airgap-cpp-devkit/lcov"
-else
-    DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/lcov"
-fi
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
 
-RPM="$PREBUILT_DIR/toolchains/lcov/${VERSION}/lcov-${VERSION}-0.noarch.rpm"
-SOURCE_ARCHIVE="$PREBUILT_DIR/toolchains/lcov/${VERSION}/lcov-${VERSION}.tar.xz"
-PERL_VENDOR="$PREBUILT_DIR/toolchains/lcov/${VERSION}/perl-vendor-lcov.tar.xz"
+LCOV_DIR="$PREBUILT_DIR/toolchains/lcov/${VERSION}"
+RPM="$LCOV_DIR/lcov-${VERSION}-0.noarch.rpm"
+SOURCE_ARCHIVE="$(devkit_resolve_archive "$LCOV_DIR" "lcov-${VERSION}" 2>/dev/null || true)"
+PERL_VENDOR="$(devkit_resolve_archive "$LCOV_DIR" "perl-vendor-lcov" 2>/dev/null || true)"
 
 # Install Capture::Tiny (and any other vendored Perl deps) into the lcov lib dir.
 # lcov 2.x needs Capture::Tiny which is not shipped by default on RHEL 8.
@@ -33,7 +30,7 @@ _install_perl_vendor() {
     if [[ -f "$PERL_VENDOR" ]]; then
         echo "    Vendoring Perl dependencies into ${lib_dir}..."
         mkdir -p "$lib_dir"
-        tar -xJf "$PERL_VENDOR" -C "$lib_dir"
+        devkit_extract "$PERL_VENDOR" "$lib_dir" 0
     fi
 }
 
@@ -48,7 +45,7 @@ elif [[ -f "$SOURCE_ARCHIVE" ]]; then
     echo "    Installing from source archive..."
     TMP="$(mktemp -d)"
     trap 'rm -rf "$TMP"' EXIT
-    tar -xJf "$SOURCE_ARCHIVE" -C "$TMP"
+    devkit_extract "$SOURCE_ARCHIVE" "$TMP" 0
     make -C "$TMP/lcov-${VERSION}" install PREFIX="$PREFIX"
     _install_perl_vendor "$PREFIX/lib/lcov"
 else
@@ -58,13 +55,6 @@ else
     exit 1
 fi
 
-mkdir -p "$(dirname "$PREFIX/INSTALL_RECEIPT.txt")"
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=linux
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> lcov ${VERSION} installed."

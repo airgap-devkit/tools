@@ -3,36 +3,28 @@ set -euo pipefail
 
 TOOL="sqlite"
 VERSION="3.53.3"
+# RHEL 8 vendored RPM ships an older SQLite than the upstream CLI tools tarball;
+# its version is tracked separately so the receipt reflects what was installed.
+RPM_VERSION="3.26.0"
+RPM_FILE="sqlite-${RPM_VERSION}-20.el8_10.x86_64.rpm"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/dev-tools/sqlite/${VERSION}"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    ARCHIVE="sqlite-tools-${VERSION}-windows-x64.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/sqlite"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    ARCHIVE_BASE="sqlite-tools-${VERSION}-windows-x64"
+    DEFAULT_PREFIX="$(devkit_default_prefix "$TOOL")"
 else
-    PLATFORM="linux"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/sqlite"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/sqlite"
-    fi
+    DEFAULT_PREFIX="$(devkit_default_prefix "$TOOL")"
     # RHEL 8: use the vendored RPM (glibc-compatible) in preference to the
     # upstream tarball which requires glibc 2.38+.
-    RPM="$PARTS_DIR/sqlite-3.26.0-20.el8_10.x86_64.rpm"
+    RPM="$PARTS_DIR/$RPM_FILE"
     if command -v rpm &>/dev/null && [[ -f "$RPM" ]]; then
         if [[ "$(id -u)" == "0" ]]; then
             echo "==> Installing SQLite via RPM (RHEL 8, root)..."
             rpm -ivh "$RPM"
-            mkdir -p "$DEFAULT_PREFIX"
-            cat > "$DEFAULT_PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=3.26.0
-platform=linux-rhel8
-install_prefix=system
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+            devkit_write_receipt "$TOOL" "$RPM_VERSION" "linux-rhel8" "$DEFAULT_PREFIX"
             echo "==> SQLite (RHEL 8 RPM) installed."
             exit 0
         else
@@ -52,13 +44,7 @@ RECEIPT
                     cp "$_rpm_prefix/usr/bin/sqlite3" "$_rpm_prefix/bin/sqlite3"
                     chmod +x "$_rpm_prefix/bin/sqlite3"
                 fi
-                cat > "$_rpm_prefix/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=3.26.0
-platform=linux-rhel8
-install_prefix=${_rpm_prefix}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+                devkit_write_receipt "$TOOL" "$RPM_VERSION" "linux-rhel8" "$_rpm_prefix"
                 echo "==> SQLite (RHEL 8 RPM, non-root) installed to ${_rpm_prefix}/bin"
                 exit 0
             fi
@@ -66,38 +52,31 @@ RECEIPT
             echo "  [!!]  rpm2cpio not found. Falling back to upstream tarball (requires glibc 2.38)." >&2
         fi
     fi
-    ARCHIVE="sqlite-tools-${VERSION}-linux-x64.tar.xz"
+    ARCHIVE_BASE="sqlite-tools-${VERSION}-linux-x64"
 fi
 
 PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
-ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
+ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")" \
+    || { echo "ERROR: Archive not found for ${ARCHIVE_BASE} in $PARTS_DIR" >&2; exit 1; }
 
-echo "==> Installing SQLite CLI ${VERSION} (${PLATFORM}) to ${PREFIX}/bin"
+echo "==> Installing SQLite CLI ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}/bin"
 
-if [[ ! -f "$ARCHIVE_PATH" ]]; then
-    echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
-fi
+devkit_verify_archive "$PARTS_DIR/manifest.json" "$ARCHIVE_PATH"
 
-if [[ "$PLATFORM" == "windows" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "${PREFIX}\\bin" 2>/dev/null || true
     PREFIX="$(cygpath -u -- "$PREFIX")"
 else
     mkdir -p "$PREFIX/bin"
 fi
-tar -xJf "$ARCHIVE_PATH" -C "$PREFIX/bin" --strip-components=0
-if [[ "$PLATFORM" == "linux" ]]; then
+devkit_install_archive "$ARCHIVE_PATH" "$PREFIX/bin"
+if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
     find "$PREFIX/bin" -maxdepth 1 -type f -exec chmod +x {} +
 fi
 
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> SQLite CLI ${VERSION} installed to ${PREFIX}/bin"

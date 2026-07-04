@@ -3,19 +3,10 @@ set -euo pipefail
 
 TOOL="git-bundle"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/git-bundle"
-else
-    PLATFORM="linux"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/git-bundle"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/git-bundle"
-    fi
-fi
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PLATFORM="$DEVKIT_PLATFORM"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done

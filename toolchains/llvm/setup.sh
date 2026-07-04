@@ -4,40 +4,26 @@ set -euo pipefail
 TOOL="llvm"
 VERSION="22.1.8"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 
-# Detect platform
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    ARCHIVE="clang+llvm-${VERSION}-x86_64-pc-windows-msvc.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/clang-llvm"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    ARCHIVE_BASE="clang+llvm-${VERSION}-x86_64-pc-windows-msvc"
 else
-    PLATFORM="linux"
-    # Select the correct binary based on glibc version.
-    # The standard build requires glibc >= 2.32 (Ubuntu 22.04+).
-    # RHEL 8 ships glibc 2.28 — use the dedicated RHEL 8 build instead.
-    # If ldd is unavailable, default to the rhel8 binary (safer).
-    _glibc_minor=$(ldd --version 2>/dev/null | awk 'NR==1{split($NF,v,"."); print int(v[2])}')
-    _glibc_minor=${_glibc_minor:-0}
-    if (( _glibc_minor < 32 )); then
-        ARCHIVE="LLVM-${VERSION}-Linux-X64-rhel8.tar.xz"
-    else
-        ARCHIVE="LLVM-${VERSION}-Linux-X64.tar.xz"
-    fi
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/clang-llvm"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/clang-llvm"
-    fi
+    # RHEL 8 ships glibc 2.28; the standard build needs glibc >= 2.32, so older
+    # hosts get the dedicated RHEL 8 build. Missing ldd → the safer RHEL 8 build.
+    ARCHIVE_BASE="$(devkit_linux_asset \
+        "LLVM-${VERSION}-Linux-X64" \
+        "LLVM-${VERSION}-Linux-X64-rhel8")"
 fi
 
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "clang-llvm")}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
 PARTS_DIR="$PREBUILT_DIR/toolchains/llvm/${VERSION}"
 
-echo "==> Installing LLVM/Clang ${VERSION} (${PLATFORM}) to ${PREFIX}"
+echo "==> Installing LLVM/Clang ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}"
 
 if [[ ! -d "$PARTS_DIR" ]]; then
     echo "ERROR: Prebuilt parts not found at: $PARTS_DIR" >&2
@@ -45,32 +31,31 @@ if [[ ! -d "$PARTS_DIR" ]]; then
     exit 1
 fi
 
-# Verify all parts present
-PARTS=("$PARTS_DIR/${ARCHIVE}.part-"*)
-if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
-    echo "ERROR: No parts found matching ${ARCHIVE}.part-* in $PARTS_DIR" >&2
-    if [[ "${ARCHIVE}" == *"-rhel8"* ]]; then
+# Resolve the archive (native .zip/.tar.gz preferred; assembles split parts).
+if ! ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")"; then
+    echo "ERROR: No archive found matching ${ARCHIVE_BASE}.* in $PARTS_DIR" >&2
+    if [[ "${ARCHIVE_BASE}" == *"-rhel8"* ]]; then
         echo "       This system requires the RHEL 8 compatible LLVM binary (glibc 2.28)." >&2
         echo "       Trigger the 'Build LLVM tools for RHEL 8' workflow in GitHub Actions" >&2
         echo "       (.github/workflows/build-llvm-rhel8.yml) then re-initialise prebuilt/." >&2
     fi
     exit 1
 fi
-echo "    Found ${#PARTS[@]} parts."
+devkit_verify_archive "$PARTS_DIR/manifest.json" "$ARCHIVE_PATH"
 
-if [[ "$PLATFORM" == "windows" ]]; then
-    mkdir -p "$PREFIX"
+mkdir -p "$PREFIX"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     PREFIX="$(cygpath -u -- "$PREFIX")"
-else
-    mkdir -p "$PREFIX"
 fi
 
 echo "    Reassembling and extracting (this may take a moment)..."
-cat "${PARTS[@]}" | tar -xJ --strip-components=1 -C "$PREFIX"
+# Auto-strips the sole wrapper dir on either platform. On Linux the .tar.gz is
+# transcoded (symlinks intact) and extracted here on the target host.
+devkit_install_archive "$ARCHIVE_PATH" "$PREFIX"
 
 # Verify the installed binaries actually execute on this system.
 # A mismatch here means the wrong binary variant was selected above.
-if [[ "$PLATFORM" == "linux" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
     if ! "$PREFIX/bin/clang-format" --version &>/dev/null; then
         echo "ERROR: clang-format was extracted but cannot execute — runtime library mismatch." >&2
         echo "       Selected archive: ${ARCHIVE}" >&2
@@ -79,15 +64,8 @@ if [[ "$PLATFORM" == "linux" ]]; then
     fi
 fi
 
-# Write install receipt
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-includes=clang,clang++,clang-format,clang-tidy,lld,llvm-ar,llvm-nm
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX" \
+    "includes=clang,clang++,clang-format,clang-tidy,lld,llvm-ar,llvm-nm"
 
 echo "==> LLVM/Clang ${VERSION} installed to ${PREFIX}"
 echo "    Add ${PREFIX}/bin to your PATH."

@@ -3,15 +3,14 @@ set -euo pipefail
 
 TOOL="gcc"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     VERSION="16.1.0"
     ARCHIVE="winlibs-x86_64-posix-seh-gcc-${VERSION}-mingw-w64ucrt-14.0.0-r3.zip"
     DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/winlibs-gcc-ucrt"
 else
-    PLATFORM="linux"
     VERSION="toolset-15"
     GCC_VERSION="16.1.0"  # actual compiler release inside gcc-toolset-15 RPMs
     DEFAULT_PREFIX="/opt/rh/gcc-toolset-15"
@@ -21,16 +20,16 @@ PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
-PARTS_DIR="$PREBUILT_DIR/toolchains/gcc/${PLATFORM}"
+PARTS_DIR="$PREBUILT_DIR/toolchains/gcc/${DEVKIT_PLATFORM}"
 
-echo "==> Installing GCC ${VERSION} (${PLATFORM})"
+echo "==> Installing GCC ${VERSION} (${DEVKIT_PLATFORM})"
 
 if [[ ! -d "$PARTS_DIR" ]]; then
     echo "ERROR: Prebuilt parts not found at: $PARTS_DIR" >&2
     exit 1
 fi
 
-if [[ "$PLATFORM" == "windows" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     PARTS=("$PARTS_DIR/${ARCHIVE}.part-"*)
     if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
         echo "ERROR: No parts found for $ARCHIVE" >&2
@@ -58,27 +57,20 @@ if [[ "$PLATFORM" == "windows" ]]; then
     done
     rm -rf "$TMP_DIR"
 
-    cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-includes=gcc,g++,gcov,gdb,gfortran,mingw-w64
-RECEIPT
+    devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX" \
+        "includes=gcc,g++,gcov,gdb,gfortran,mingw-w64"
 
     echo "==> GCC ${VERSION} (WinLibs) installed to ${PREFIX}"
     echo "    Add ${PREFIX}/bin to your PATH."
 
 else
-    PARTS=("$PARTS_DIR/gcc-toolset-15-rhel8-rpms.tar.xz.part-"*)
-    if [[ ${#PARTS[@]} -eq 0 || ! -f "${PARTS[0]}" ]]; then
-        echo "ERROR: No parts found for gcc-toolset-15-rhel8-rpms.tar.xz" >&2
+    if ! BUNDLE="$(devkit_resolve_archive "$PARTS_DIR" "gcc-toolset-15-rhel8-rpms")"; then
+        echo "ERROR: No archive found for gcc-toolset-15-rhel8-rpms in $PARTS_DIR" >&2
         exit 1
     fi
-    echo "    Found ${#PARTS[@]} parts. Extracting RPMs..."
+    echo "    Extracting RPMs..."
     TMP=$(mktemp -d)
-    cat "${PARTS[@]}" | tar -xJ -C "$TMP"
+    devkit_extract "$BUNDLE" "$TMP" 0
 
     if [[ "$(id -u)" == "0" ]]; then
         # Root: install system-wide via rpm so scl enable works
@@ -105,14 +97,8 @@ else
             cp -a "$PREFIX/opt/rh/gcc-toolset-15/root/." "$PREFIX/"
             rm -rf "$PREFIX/opt"
         fi
-        cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${GCC_VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-install_mode=user
-RECEIPT
+        devkit_write_receipt "$TOOL" "$GCC_VERSION" "$DEVKIT_PLATFORM" "$PREFIX" \
+            "install_mode=user"
         echo "==> GCC toolset-15 installed (user mode) to ${PREFIX}."
         echo "    Add ${PREFIX}/bin to your PATH."
     fi

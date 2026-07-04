@@ -4,53 +4,40 @@ set -euo pipefail
 TOOL="ninja"
 VERSION="1.13.2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    ARCHIVE="ninja-${VERSION}-windows.tar.xz"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    ARCHIVE_BASE="ninja-${VERSION}-windows"
     BINARY="ninja.exe"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/ninja"
 else
-    PLATFORM="linux"
-    ARCHIVE="ninja-${VERSION}-linux.tar.xz"
+    ARCHIVE_BASE="ninja-${VERSION}-linux"
     BINARY="ninja"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/ninja"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/ninja"
-    fi
 fi
 
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
 PARTS_DIR="$PREBUILT_DIR/toolchains/ninja/${VERSION}"
-ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
+ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")" \
+    || { echo "ERROR: Archive not found for ${ARCHIVE_BASE} in $PARTS_DIR" >&2; exit 1; }
 
-echo "==> Installing Ninja ${VERSION} (${PLATFORM}) to ${PREFIX}/bin"
+echo "==> Installing Ninja ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}/bin"
 
-if [[ ! -f "$ARCHIVE_PATH" ]]; then
-    echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2
-    exit 1
-fi
+devkit_verify_archive "$PARTS_DIR/manifest.json" "$ARCHIVE_PATH"
 
-if [[ "$PLATFORM" == "windows" ]]; then
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     MSYS_NO_PATHCONV=1 cmd.exe /c mkdir "${PREFIX}\\bin" 2>/dev/null || true
     PREFIX="$(cygpath -u -- "$PREFIX")"
 else
     mkdir -p "$PREFIX/bin"
 fi
-tar -xJf "$ARCHIVE_PATH" -C "$PREFIX/bin" "./$BINARY"
+# The ninja archive is a single bare binary at the root (no wrapper dir) — the
+# auto-normalizer leaves it as-is and drops it into bin.
+devkit_install_archive "$ARCHIVE_PATH" "$PREFIX/bin"
 chmod +x "$PREFIX/bin/$BINARY"
 
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> Ninja ${VERSION} installed to ${PREFIX}/bin/${BINARY}"

@@ -2,55 +2,39 @@
 set -euo pipefail
 
 TOOL="cmake"
-VERSION="4.3.4"
+VERSION="4.3.3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 PARTS_DIR="$PREBUILT_DIR/build-tools/cmake/${VERSION}"
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    ARCHIVE="cmake-${VERSION}-windows-x86_64.tar.xz"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/cmake"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    ARCHIVE_BASE="cmake-${VERSION}-windows-x86_64"
 else
-    PLATFORM="linux"
-    ARCHIVE="cmake-${VERSION}-linux-x86_64.tar.xz"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/cmake"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/cmake"
-    fi
+    ARCHIVE_BASE="cmake-${VERSION}-linux-x86_64"
 fi
 
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
-ARCHIVE_PATH="$PARTS_DIR/$ARCHIVE"
+ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")" \
+    || { echo "ERROR: Archive not found for ${ARCHIVE_BASE} in $PARTS_DIR" >&2; exit 1; }
 
-echo "==> Installing CMake ${VERSION} (${PLATFORM}) to ${PREFIX}"
+echo "==> Installing CMake ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}"
 
-if [[ ! -f "$ARCHIVE_PATH" ]]; then
-    echo "ERROR: Archive not found: $ARCHIVE_PATH" >&2; exit 1
-fi
+devkit_verify_archive "$PARTS_DIR/manifest.json" "$ARCHIVE_PATH"
 
-if [[ "$PLATFORM" == "windows" ]]; then
-    mkdir -p "$PREFIX"
+mkdir -p "$PREFIX"
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     PREFIX="$(cygpath -u -- "$PREFIX")"
-else
-    mkdir -p "$PREFIX"
 fi
-tar -xJf "$ARCHIVE_PATH" -C "$PREFIX" --strip-components=0
-if [[ "$PLATFORM" == "linux" ]]; then
+devkit_install_archive "$ARCHIVE_PATH" "$PREFIX"
+if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
     find "$PREFIX/bin" -maxdepth 1 -type f -exec chmod +x {} +
 fi
 
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=${VERSION}
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-RECEIPT
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
 echo "==> CMake ${VERSION} installed to ${PREFIX}"
 echo "    Add ${PREFIX}/bin to your PATH."

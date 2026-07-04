@@ -43,7 +43,7 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.80.0 | Windows | Yes (.zip, 4 parts) | `frameworks/grpc/` |
+| **gRPC** | 1.81.1 | Windows | Yes (.zip, per MSVC toolset v142/v143/v145, ~5 parts each) | `frameworks/grpc/` |
 
 ---
 
@@ -73,7 +73,7 @@ All tools target air-gapped environments — no internet access required at inst
 | lcov 2.4 | — | Yes | Linux / RHEL 8 only |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
-| gRPC 1.80.0 | Yes | — | Windows MSVC build only |
+| gRPC 1.81.1 | Yes | — | Windows only, prebuilt per MSVC toolset (v142/v143/v145) |
 | Servy 7.9 | Yes | — | Windows only, graceful no-op on Linux |
 | Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code Extensions | Yes | Yes | Per-platform .vsix files |

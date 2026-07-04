@@ -3,6 +3,7 @@ set -euo pipefail
 
 TOOL="vscode-extensions"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 # Look for .vsix files first in the dedicated extensions subdir, then fall back
 # to the vscode prebuilt dir (which is where they land when prebuilt/ is laid
@@ -15,18 +16,8 @@ if [[ ! -d "$VSIX_DIR" ]]; then
     VSIX_DIR="$PREBUILT_DIR/dev-tools/vscode"
 fi
 
-if [[ "${AIRGAP_OS:-}" == "windows" || "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
-    PLATFORM="windows"
-    DEFAULT_PREFIX="${LOCALAPPDATA:-$HOME/AppData/Local}/airgap-cpp-devkit/vscode-extensions"
-else
-    PLATFORM="linux"
-    if [[ "$(id -u)" == "0" ]]; then
-        DEFAULT_PREFIX="/opt/airgap-cpp-devkit/vscode-extensions"
-    else
-        DEFAULT_PREFIX="${HOME}/.local/share/airgap-cpp-devkit/vscode-extensions"
-    fi
-fi
-PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
+PLATFORM="$DEVKIT_PLATFORM"
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
@@ -116,15 +107,8 @@ for vsix in "${VSIX_FILES[@]}"; do
 done
 
 echo ""
-mkdir -p "$PREFIX"
-cat > "$PREFIX/INSTALL_RECEIPT.txt" << RECEIPT
-tool=${TOOL}
-version=various
-platform=${PLATFORM}
-install_prefix=${PREFIX}
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-installed_count=${#INSTALLED[@]}
-RECEIPT
+devkit_write_receipt "$TOOL" "various" "$DEVKIT_PLATFORM" "$PREFIX" \
+    "installed_count=${#INSTALLED[@]}"
 
 echo "==> VS Code Extensions: ${#INSTALLED[@]} installed, ${#FAILED[@]} failed."
 if [[ ${#FAILED[@]} -gt 0 ]]; then
