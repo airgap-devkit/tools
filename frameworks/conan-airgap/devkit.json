@@ -6,6 +6,7 @@
   "platform": "both",
   "description": "Portable offline Conan 2.30.0 environment — seed C/C++ packages on a connected host, import into air-gapped systems, with CMake + Eclipse integration and per-network profiles.",
   "setup": "setup.sh",
+  "check_cmd": "conan --version",
   "receipt_name": "conan-airgap",
   "estimate": "~5s",
   "uses_prebuilt": false,
