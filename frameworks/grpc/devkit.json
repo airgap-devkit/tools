@@ -13,7 +13,7 @@
   "source": "default",
   "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH - check install path'",
   "check_url": "https://github.com/grpc/grpc/releases",
-  "platform_note": "prebuilt release packages are maintainer-built from source (dso-suite), ABI-locked per MSVC toolset",
+  "platform_note": "prebuilt release packages are maintainer-built from source, ABI-locked per MSVC toolset",
   "variant_label": "Visual Studio version",
   "variants": [
     {

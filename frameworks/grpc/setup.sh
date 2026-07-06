@@ -5,7 +5,7 @@
 #
 # Installs a prebuilt gRPC package for Windows x64 from the prebuilt submodule.
 #
-# The prebuilt distribution is the dso-suite maintainer build (release config),
+# The prebuilt distribution is a maintainer build (release config),
 # vendored into this repo per MSVC toolset. Because the static libraries are
 # ABI-locked to the toolset they were built with, one package is shipped per
 # Visual Studio version:

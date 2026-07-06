@@ -6,10 +6,10 @@ A ready-to-consume, **relocatable** gRPC install prefix for C++ — no compilati
 no admin rights, no internet. Extract the package the devkit installs and build
 your own gRPC app in minutes.
 
-The prebuilt distribution is the [dso-suite](../../../) maintainer build (release
-configuration), vendored into this repo as split parts under
+The prebuilt distribution is a maintainer build (release configuration),
+vendored into this repo as split parts under
 `prebuilt/frameworks/grpc/windows/1.81.1/`. To refresh it from an updated
-dso-suite build, use [`scripts/internal/import-grpc-prebuilt.sh`](../../../scripts/internal/import-grpc-prebuilt.sh).
+maintainer build, use [`scripts/internal/import-grpc-prebuilt.sh`](../../../scripts/internal/import-grpc-prebuilt.sh).
 
 ## Pick the package that matches your Visual Studio
 
