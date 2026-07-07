@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="lcov"
-VERSION="2.4"
+VERSION="2.5"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
@@ -47,7 +47,11 @@ elif [[ -f "$SOURCE_ARCHIVE" ]]; then
     echo "    Installing from source archive..."
     TMP=$(mktemp -d)
     devkit_extract "$SOURCE_ARCHIVE" "$TMP" 0
-    make -C "$TMP/lcov-${VERSION}" install PREFIX="$PREFIX"
+    # The archive may or may not carry a top-level lcov-<version>/ wrapper dir;
+    # locate the Makefile root either way.
+    SRC="$TMP/lcov-${VERSION}"
+    [[ -f "$SRC/Makefile" ]] || SRC="$TMP"
+    make -C "$SRC" install PREFIX="$PREFIX"
     rm -rf "$TMP"
     _install_perl_vendor "$PREFIX/lib/lcov"
 else

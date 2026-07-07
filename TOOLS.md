@@ -26,7 +26,7 @@ All tools target air-gapped environments — no internet access required at inst
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **CMake** | 4.3.1 | Windows + Linux | Yes | `build-tools/cmake/` |
-| **lcov** | 2.4 | Linux / RHEL 8 | Yes (vendored tarball) | `build-tools/lcov/` |
+| **lcov** | 2.5 | Linux / RHEL 8 | Yes (vendored tarball) | `toolchains/lcov/` |
 
 ---
 

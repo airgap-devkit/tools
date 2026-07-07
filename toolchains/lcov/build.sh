@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Installs lcov 2.4 from source (Perl scripts — no compilation needed).
+# Installs lcov 2.5 from source (Perl scripts — no compilation needed).
 # This is the same as setup.sh source-path but explicit for build pipeline use.
 set -euo pipefail
 
-VERSION="2.4"
+VERSION="2.5"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 SOURCE_ARCHIVE="$SOURCES_DIR/lcov-${VERSION}.tar.xz"
