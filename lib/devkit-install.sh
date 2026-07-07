@@ -122,13 +122,27 @@ devkit_assemble_parts() {
     fi
     [[ -z "$first_part" ]] && return 0
 
-    local target="${first_part%.part-aa}"
-    if [[ ! -f "$target" ]]; then
-        echo "==> Assembling split archive: $(basename "$target")..." >&2
-        # Only cat the parts that belong to this specific base file.
-        cat "${target}.part-"* > "$target"
-        echo "    $(du -sh "$target" 2>/dev/null | cut -f1) assembled" >&2
+    local stem="${first_part%.part-aa}"   # full path, extension kept
+    local base; base="$(basename "$stem")"
+
+    # Reuse an already-assembled whole file if one is present in the source dir.
+    if [[ -f "$stem" ]]; then echo "$stem"; return 0; fi
+
+    # Assemble in place only when the prebuilt dir is writable; otherwise write
+    # to a temp dir. The prebuilt tree is read-only when the devkit is vendored
+    # under a system prefix or run by a non-root user (e.g. the RHEL 8 CI
+    # container, where /workspace is root-owned but installs run as `devkit`).
+    local target
+    if [[ -w "$dir" ]]; then target="$stem"; else target="$(mktemp -d)/$base"; fi
+
+    echo "==> Assembling split archive: ${base}..." >&2
+    # Only cat the parts that belong to this specific base file. A failed write
+    # must abort — never return a path to a file that was not created.
+    if ! cat "${stem}.part-"* > "$target" 2>/dev/null; then
+        echo "ERROR: failed to reassemble ${base} — no writable location for the joined archive." >&2
+        return 1
     fi
+    echo "    $(du -sh "$target" 2>/dev/null | cut -f1) assembled" >&2
     echo "$target"
 }
 
@@ -138,13 +152,21 @@ devkit_assemble_parts() {
 # split parts (BASE.ext.part-aa...) into the whole file when it is absent.
 # Echoes the resolved archive path; returns 1 if nothing matches.
 devkit_resolve_archive() {
-    local dir="$1" base="$2" ext f
+    local dir="$1" base="$2" ext f out
     for ext in zip tar.gz tar.xz; do
         f="$dir/$base.$ext"
         if [[ -f "$f" ]]; then echo "$f"; return 0; fi
         if ls "$dir/$base.$ext".part-aa &>/dev/null; then
-            [[ -f "$f" ]] || cat "$dir/$base.$ext".part-* > "$f"
-            echo "$f"; return 0
+            # Assemble in place when the prebuilt dir is writable, else into a
+            # temp dir (the prebuilt tree is read-only under a system prefix or
+            # a non-root CI user). A failed write must return 1 — never echo a
+            # path to a file that was not actually created.
+            if [[ -w "$dir" ]]; then out="$f"; else out="$(mktemp -d)/$base.$ext"; fi
+            if ! cat "$dir/$base.$ext".part-* > "$out" 2>/dev/null; then
+                echo "ERROR: failed to reassemble $base.$ext — no writable location for the joined archive." >&2
+                return 1
+            fi
+            echo "$out"; return 0
         fi
     done
     return 1

@@ -51,6 +51,11 @@ elif [[ -f "$SOURCE_ARCHIVE" ]]; then
     # locate the Makefile root either way.
     SRC="$TMP/lcov-${VERSION}"
     [[ -f "$SRC/Makefile" ]] || SRC="$TMP"
+    # A .zip source archive does not preserve the execute bit, so the helper
+    # scripts that `make install` invokes come out non-executable (make would
+    # otherwise fail with exit 126). Restore it before installing.
+    find "$SRC" -type f \( -name '*.pl' -o -name '*.sh' -o -path '*/bin/*' \) \
+        -exec chmod +x {} + 2>/dev/null || true
     make -C "$SRC" install PREFIX="$PREFIX"
     rm -rf "$TMP"
     _install_perl_vendor "$PREFIX/lib/lcov"

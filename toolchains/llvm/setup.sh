@@ -8,7 +8,9 @@ source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
-    ARCHIVE_BASE="clang+llvm-${VERSION}-x86_64-pc-windows-msvc"
+    # The staged Windows parts keep the upstream URL-encoded '+' (%2B) in their
+    # filename, so the archive base must match that encoded form byte-for-byte.
+    ARCHIVE_BASE="clang%2Bllvm-${VERSION}-x86_64-pc-windows-msvc"
 else
     # RHEL 8 ships glibc 2.28; the standard build needs glibc >= 2.32, so older
     # hosts get the dedicated RHEL 8 build. Missing ldd → the safer RHEL 8 build.
