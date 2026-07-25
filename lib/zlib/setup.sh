@@ -49,7 +49,8 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     command -v mingw32-make &>/dev/null || command -v make &>/dev/null \
         || command -v nmake &>/dev/null || MISSING+=("mingw32-make/make/nmake")
 else
-    command -v cc &>/dev/null || command -v gcc &>/dev/null || MISSING+=("cc/gcc")
+    command -v cc &>/dev/null || command -v gcc &>/dev/null || command -v clang &>/dev/null \
+        || MISSING+=("cc/gcc/clang")
     command -v make &>/dev/null || MISSING+=("make")
 fi
 if [[ ${#MISSING[@]} -gt 0 ]]; then
@@ -71,6 +72,15 @@ SRC_DIR="$BUILD_DIR/zlib-${VERSION}"
 GEN_ARGS=()
 if [[ "$DEVKIT_PLATFORM" == "windows" ]] && command -v mingw32-make &>/dev/null; then
     GEN_ARGS=(-G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make)
+fi
+
+# The devkit ships LLVM/clang, not gcc. When no cc/gcc is on PATH, point CMake
+# at clang so the source build succeeds with the toolchain that is present.
+if [[ "$DEVKIT_PLATFORM" != "windows" ]] \
+   && ! command -v cc &>/dev/null && ! command -v gcc &>/dev/null \
+   && command -v clang &>/dev/null; then
+    export CC="${CC:-clang}" CXX="${CXX:-clang++}"
+    echo "==> Using clang (${CC}/${CXX}) — no cc/gcc on PATH."
 fi
 
 echo "==> Configuring (CMake)..."

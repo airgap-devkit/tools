@@ -25,8 +25,12 @@ CLANG_FORMAT_VERSION=$(clang-format --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+
 echo "    clang-format version: ${CLANG_FORMAT_VERSION}"
 
 if [[ ! -d "$HOOK_DIR" ]]; then
-    echo "ERROR: Not a git repository (no .git/hooks at $TARGET_REPO)" >&2
-    exit 1
+    # The pre-commit hook only makes sense inside a git working tree. When the
+    # devkit is installed outside one (e.g. CI containers, fresh servers), skip
+    # gracefully rather than failing the whole install.
+    echo "    [--] Not a git repository (no .git/hooks at $TARGET_REPO) — skipping hook install." >&2
+    echo "         Re-run this inside your project's git repo to install the clang-format hook." >&2
+    exit 0
 fi
 
 # Backup existing hook if present
