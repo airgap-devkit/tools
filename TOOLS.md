@@ -16,7 +16,7 @@ All tools target air-gapped environments — no internet access required at inst
 | **Clang / LLVM (source build)** | 22.1.3 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
 | **LLVM Style Formatter** | 22.1.3 | Windows + Linux | Yes | `toolchains/clang/style-formatter/` |
 | **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `toolchains/gcc/windows/` |
-| **GCC Native (RHEL 8)** | 15 | RHEL 8 | Yes | `toolchains/gcc/linux/native/` |
+| **GCC Native (RHEL/Rocky 8, 9, 10)** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `toolchains/gcc/linux/native/` |
 | **GCC Cross (x86_64-bionic)** | 15 | Linux | Yes | `toolchains/gcc/linux/cross/` |
 
 ---
@@ -26,7 +26,7 @@ All tools target air-gapped environments — no internet access required at inst
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **CMake** | 4.3.1 | Windows + Linux | Yes | `build-tools/cmake/` |
-| **lcov** | 2.5 | Linux / RHEL 8 | Yes (vendored tarball) | `toolchains/lcov/` |
+| **lcov** | 2.5 | Linux / RHEL/Rocky 8, 9, 10 | Yes (vendored tarball) | `toolchains/lcov/` |
 
 ---
 
@@ -43,7 +43,7 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.81.1 | Windows | Yes (.zip, per MSVC toolset v142/v143/v145, ~5 parts each) | `frameworks/grpc/` |
+| **gRPC** | 1.83.0 | Windows + Linux | Yes (Windows .zip per MSVC toolset v142/v143/v145 × Release/Debug; Linux .tar.gz RHEL/Rocky 8/9/10 x86_64) | `frameworks/grpc/` |
 
 ---
 
@@ -54,7 +54,7 @@ All tools target air-gapped environments — no internet access required at inst
 | **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
 | **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
 | **VS Code Extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
-| **SQLite CLI** | 3.53.0 (Win/Linux) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `dev-tools/sqlite/` |
+| **SQLite CLI** | 3.53.3 (Win/modern Linux) / distro-native RPM (RHEL/Rocky 8/9/10) | Windows + Linux | Yes | `dev-tools/sqlite/` |
 | **MATLAB Verification** | N/A | Windows + Linux | — (checks existing install) | `dev-tools/matlab/` |
 | **git-bundle Transfer Tool** | N/A | Windows + Linux | — (Python scripts) | `dev-tools/git-bundle/` |
 
@@ -62,21 +62,21 @@ All tools target air-gapped environments — no internet access required at inst
 
 ## Platform Support Matrix
 
-| Tool | Windows 11 | RHEL 8 | Notes |
-|------|-----------|--------|-------|
+| Tool | Windows 11 | RHEL/Rocky 8, 9, 10 | Notes |
+|------|-----------|---------------------|-------|
 | Clang / LLVM | Yes | Yes | Prebuilt for both |
 | LLVM Style Formatter | Yes | Yes | Git pre-commit hook |
 | GCC + MinGW-w64 | Yes | — | Windows native toolchain |
-| GCC Native | — | Yes | RHEL 8 RPMs |
+| GCC Native | — | Yes | RHEL/Rocky 8, 9, 10 RPMs |
 | GCC Cross | — | Yes | Linux hosts only |
 | CMake 4.3.1 | Yes | Yes | Prebuilt for both |
-| lcov 2.4 | — | Yes | Linux / RHEL 8 only |
+| lcov 2.4 | — | Yes | Linux / RHEL/Rocky 8, 9, 10 only |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
-| gRPC 1.81.1 | Yes | — | Windows only, prebuilt per MSVC toolset (v142/v143/v145) |
+| gRPC 1.83.0 | Yes | Yes | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug. Linux: RHEL/Rocky 8/9/10 x86_64 static-runtime |
 | Servy 7.9 | Yes | — | Windows only, graceful no-op on Linux |
 | Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code Extensions | Yes | Yes | Per-platform .vsix files |
-| SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
+| SQLite CLI | Yes (3.53.3) | Yes (distro-native RPM) | RHEL/Rocky 8, 9, 10 each use the distro-native system RPM |
 | MATLAB Verification | Yes | Yes | Checks existing install only |
 | git-bundle Tool | Yes | Yes | Pure Python, no deps |

@@ -8,12 +8,12 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "echo.grpc.pb.h"  // generated from proto/echo.proto at build time
+#include "echo.grpc.pb.h" // generated from proto/echo.proto at build time
 
 class EchoServiceImpl final : public echo::Echo::Service {
-  grpc::Status Say(grpc::ServerContext* /*context*/,
-                   const echo::EchoRequest* request,
-                   echo::EchoReply* reply) override {
+  grpc::Status Say(grpc::ServerContext * /*context*/,
+                   const echo::EchoRequest *request,
+                   echo::EchoReply *reply) override {
     reply->set_message("You said: " + request->message());
     return grpc::Status::OK;
   }

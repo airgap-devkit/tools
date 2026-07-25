@@ -7,7 +7,7 @@
     Fleets are not uniform: different Visual Studio versions, different CMake versions.
     The prebuilt static libraries are ABI-locked to an MSVC toolset, so this script
     detects the installed MSVC toolset(s) and CMake, then prints:
-      * which grpc-1.81.1-msvc<NNN>-x64 package matches,
+      * which grpc-1.83.0-msvc<NNN>-release package matches,
       * whether CMakePresets.json can be used (needs CMake >= 3.21), and
       * the exact configure command to copy/paste.
 
@@ -32,7 +32,7 @@ function Get-ToolsetName([string]$v) {
 }
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " gRPC 1.81.1 prebuilt -- environment check" -ForegroundColor Cyan
+Write-Host " gRPC 1.83.0 prebuilt -- environment check" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # --- Detect installed MSVC toolsets ------------------------------------------
@@ -93,7 +93,7 @@ if (-not $supported) {
     return
 }
 foreach ($ts in $supported) {
-    $pkg = "grpc-1.81.1-msvc$($ts.Substring(1))-x64"
+    $pkg = "grpc-1.83.0-msvc$($ts.Substring(1))-release"
     $gen = $toolsets[$ts].Generator
     # Only VS 2026's generator needs an explicit -T toolset selection (it hosts multiple).
     $tflag = if ($gen -eq 'Visual Studio 18 2026') { " -T $ts,version=$($toolsets[$ts].Version)" } else { '' }

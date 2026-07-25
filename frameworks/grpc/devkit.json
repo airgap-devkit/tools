@@ -1,10 +1,10 @@
 {
   "id": "grpc",
   "name": "gRPC",
-  "version": "1.81.1",
+  "version": "1.83.0",
   "category": "Frameworks",
-  "platform": "windows",
-  "description": "High-performance RPC framework for building distributed C++ services using Protocol Buffers. Prebuilt per MSVC toolset — pick the package that matches your Visual Studio version.",
+  "platform": "both",
+  "description": "High-performance RPC framework for building distributed C++ services using Protocol Buffers. Prebuilt per MSVC toolset (Release or Debug) on Windows, and as a static-runtime RHEL 8/9/10 package on Linux — pick the package that matches your target.",
   "setup": "setup.sh",
   "receipt_name": "grpc",
   "estimate": "~1 min (prebuilt)",
@@ -13,30 +13,64 @@
   "source": "default",
   "check_cmd": "grpc_cpp_plugin --version 2>&1 || echo 'grpc_cpp_plugin not on PATH - check install path'",
   "check_url": "https://github.com/grpc/grpc/releases",
-  "platform_note": "prebuilt release packages are maintainer-built from source, ABI-locked per MSVC toolset",
-  "variant_label": "Visual Studio version",
+  "platform_note": "Windows packages are maintainer-built from source, ABI-locked per MSVC toolset (Release or Debug). The Linux package is a RHEL 8/9/10 gcc-toolset build with a statically linked C++ runtime.",
+  "variant_label": "Package",
   "variants": [
     {
-      "id": "v143",
-      "label": "Visual Studio 2022 (MSVC v143)",
+      "id": "v143-release",
+      "label": "Visual Studio 2022 (MSVC v143) — Release",
       "toolset": "v143",
-      "archive": "grpc-1.81.1-msvc143-x64-release.zip",
-      "setup_args": ["--toolset", "v143"],
+      "config": "release",
+      "archive": "grpc-1.83.0-msvc143-x64-release.zip",
+      "setup_args": ["--toolset", "v143", "--config", "release"],
       "default": true
     },
     {
-      "id": "v145",
-      "label": "Visual Studio 2026 (MSVC v145)",
+      "id": "v145-release",
+      "label": "Visual Studio 2026 (MSVC v145) — Release",
       "toolset": "v145",
-      "archive": "grpc-1.81.1-msvc145-x64-release.zip",
-      "setup_args": ["--toolset", "v145"]
+      "config": "release",
+      "archive": "grpc-1.83.0-msvc145-x64-release.zip",
+      "setup_args": ["--toolset", "v145", "--config", "release"]
     },
     {
-      "id": "v142",
-      "label": "Visual Studio 2019 (MSVC v142)",
+      "id": "v142-release",
+      "label": "Visual Studio 2019 (MSVC v142) — Release",
       "toolset": "v142",
-      "archive": "grpc-1.81.1-msvc142-x64-release.zip",
-      "setup_args": ["--toolset", "v142"]
+      "config": "release",
+      "archive": "grpc-1.83.0-msvc142-x64-release.zip",
+      "setup_args": ["--toolset", "v142", "--config", "release"]
+    },
+    {
+      "id": "v143-debug",
+      "label": "Visual Studio 2022 (MSVC v143) — Debug",
+      "toolset": "v143",
+      "config": "debug",
+      "archive": "grpc-1.83.0-msvc143-x64-debug.zip",
+      "setup_args": ["--toolset", "v143", "--config", "debug"]
+    },
+    {
+      "id": "v145-debug",
+      "label": "Visual Studio 2026 (MSVC v145) — Debug",
+      "toolset": "v145",
+      "config": "debug",
+      "archive": "grpc-1.83.0-msvc145-x64-debug.zip",
+      "setup_args": ["--toolset", "v145", "--config", "debug"]
+    },
+    {
+      "id": "v142-debug",
+      "label": "Visual Studio 2019 (MSVC v142) — Debug",
+      "toolset": "v142",
+      "config": "debug",
+      "archive": "grpc-1.83.0-msvc142-x64-debug.zip",
+      "setup_args": ["--toolset", "v142", "--config", "debug"]
+    },
+    {
+      "id": "linux",
+      "label": "Linux x86_64 (RHEL 8/9/10)",
+      "config": "release",
+      "archive": "grpc-1.83.0-linux-x86_64.tar.gz",
+      "setup_args": ["--platform", "linux"]
     }
   ]
 }

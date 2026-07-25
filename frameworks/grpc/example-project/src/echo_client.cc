@@ -1,18 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
 // Minimal gRPC client built against the PREBUILT gRPC package.
 //   Usage: echo_client.exe ["your message"]
 
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include <grpcpp/grpcpp.h>
 
-#include "echo.grpc.pb.h"  // generated from proto/echo.proto at build time
+#include "echo.grpc.pb.h" // generated from proto/echo.proto at build time
 
-int main(int argc, char** argv) {
+// Use TLS when a PEM root-certificate file is supplied via GRPC_TLS_ROOT_CERT;
+// fall back to an insecure channel for the local loopback demo.
+static std::shared_ptr<grpc::ChannelCredentials> MakeChannelCredentials() {
+  if (const char *ca_path = std::getenv("GRPC_TLS_ROOT_CERT")) {
+    std::ifstream ca_file(ca_path);
+    std::stringstream ca_buf;
+    ca_buf << ca_file.rdbuf();
+    grpc::SslCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = ca_buf.str();
+    return grpc::SslCredentials(ssl_opts);
+  }
+  return grpc::InsecureChannelCredentials();
+}
+
+int main(int argc, char **argv) {
   const std::string target("localhost:50051");
-  auto channel =
-      grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
+  auto channel = grpc::CreateChannel(target, MakeChannelCredentials());
   std::unique_ptr<echo::Echo::Stub> stub = echo::Echo::NewStub(channel);
 
   echo::EchoRequest request;

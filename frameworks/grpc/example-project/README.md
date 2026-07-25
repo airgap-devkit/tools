@@ -35,29 +35,40 @@ below read `$env{GRPC_ROOT}` so you never hard-code a path.
 
 ## Compiler compatibility (read this first)
 
-The prebuilt static libraries are **ABI-locked** to the MSVC toolset they were built with.
-Pick the package that matches your compiler:
+On Windows the prebuilt static libraries are **ABI-locked** to the MSVC toolset they were
+built with. Pick the package that matches your compiler (each ships in Release and Debug):
 
 | Your IDE / compiler | Toolset | Use this package |
 |---|---|---|
-| Visual Studio 2022 (17.x) | v143 | `grpc-1.81.1-msvc143-x64` |
-| Visual Studio 2026 | v145 | `grpc-1.81.1-msvc145-x64` |
-| VS 2026 building in v143 mode | v143 | `grpc-1.81.1-msvc143-x64` |
+| Visual Studio 2019 (16.x) | v142 | `grpc-1.83.0-msvc142-<config>` |
+| Visual Studio 2022 (17.x) | v143 | `grpc-1.83.0-msvc143-<config>` |
+| Visual Studio 2026 | v145 | `grpc-1.83.0-msvc145-<config>` |
+| VS 2026 building in v143 mode | v143 | `grpc-1.83.0-msvc143-<config>` |
+| RHEL 8, 9 or 10 (gcc-toolset, x86_64) | — | `grpc-1.83.0-linux` |
 
-> **Not supported:** Visual Studio 2019 (v142) or 2017 (v141), MinGW/gcc, Clang. The static
+> **Not supported:** Visual Studio 2017 (v141), MinGW/gcc on Windows, Clang. The static
 > libs will not link against those ABIs. If you need one of them, a maintainer must produce
-> a matching package with `scripts\build-grpc.ps1`.
+> a matching package with `scripts/build-grpc.ps1` (Windows) or `scripts/build-grpc.sh` (Linux).
 
 ---
 
 ## One-time setup
 
-1. Extract the matching package somewhere writable (no admin needed), e.g.
-   `%LOCALAPPDATA%\FTE_Software\grpc-1.81.1`. (`scripts\Install-GrpcPrebuilt.ps1` in the
-   parent repo does this for you.)
+1. Install the matching package with the devkit (no admin needed). It extracts to a
+   per-package prefix such as `%LOCALAPPDATA%\airgap-cpp-devkit\grpc-1.83.0-msvc143-release`
+   on Windows, or `~/.local/share/airgap-cpp-devkit/grpc-1.83.0-linux` on Linux:
+   ```bash
+   bash tools/frameworks/grpc/setup.sh --toolset v143 --config release   # Windows
+   bash tools/frameworks/grpc/setup.sh --platform linux                  # RHEL/Rocky 8/9/10
+   ```
 2. Activate it in your terminal — this sets `GRPC_ROOT` and puts `protoc` on PATH:
    ```powershell
-   . "$env:LOCALAPPDATA\FTE_Software\grpc-1.81.1\activate.ps1"
+   # Windows
+   . "$env:LOCALAPPDATA\airgap-cpp-devkit\grpc-1.83.0-msvc143-release\activate.ps1"
+   ```
+   ```bash
+   # Linux
+   source ~/.local/share/airgap-cpp-devkit/grpc-1.83.0-linux/activate.sh
    ```
    Keep this variable available to whichever IDE you launch (launch the IDE from the same
    terminal, or set `GRPC_ROOT` as a user environment variable once).

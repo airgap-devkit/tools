@@ -33,12 +33,23 @@
       "inherits": "_base",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build/vs2022-v143"
+    },
+    {
+      "name": "vs2019-v142",
+      "displayName": "VS 2019 - v142 toolset (use the msvc142 package)",
+      "inherits": "_base",
+      "generator": "Visual Studio 16 2019",
+      "binaryDir": "${sourceDir}/build/vs2019-v142"
     }
   ],
   "buildPresets": [
     { "name": "vs2026-v143-release", "configurePreset": "vs2026-v143", "configuration": "Release" },
     { "name": "vs2026-v143-debug",   "configurePreset": "vs2026-v143", "configuration": "Debug" },
     { "name": "vs2026-v145-release", "configurePreset": "vs2026-v145", "configuration": "Release" },
-    { "name": "vs2022-v143-release", "configurePreset": "vs2022-v143", "configuration": "Release" }
+    { "name": "vs2026-v145-debug",   "configurePreset": "vs2026-v145", "configuration": "Debug" },
+    { "name": "vs2022-v143-release", "configurePreset": "vs2022-v143", "configuration": "Release" },
+    { "name": "vs2022-v143-debug",   "configurePreset": "vs2022-v143", "configuration": "Debug" },
+    { "name": "vs2019-v142-release", "configurePreset": "vs2019-v142", "configuration": "Release" },
+    { "name": "vs2019-v142-debug",   "configurePreset": "vs2019-v142", "configuration": "Debug" }
   ]
 }

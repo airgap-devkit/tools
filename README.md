@@ -91,7 +91,7 @@ airgap-devkit-tools/
     gcc/
       windows/          devkit.json  (GCC + MinGW-w64 15.2.0)
       linux/
-        native/         devkit.json  (GCC Native, RHEL 8)
+        native/         devkit.json  (GCC Native, RHEL/Rocky 8, 9, 10)
         cross/          devkit.json  (GCC Cross x86_64-bionic)
   build-tools/
     cmake/              devkit.json  (CMake 4.3.1)
@@ -100,7 +100,7 @@ airgap-devkit-tools/
     python/             devkit.json  (Python 3.14.4)
     dotnet/             devkit.json  (.NET SDK 10.0.201)
   frameworks/
-    grpc/               devkit.json  (gRPC 1.81.1, per MSVC toolset v142/v143/v145)
+    grpc/               devkit.json  (gRPC 1.83.0, Win v142/v143/v145 x Release/Debug + Linux RHEL/Rocky 8/9/10)
   dev-tools/
     servy/              devkit.json  (Servy 7.9)
     conan/              devkit.json  (Conan 2.27.1)
