@@ -14,23 +14,53 @@ else
     DEVKIT_PLATFORM="linux"
 fi
 
-# ── glibc-aware Linux asset selection ───────────────────────────────────────
-# RHEL 8 ships glibc 2.28; RHEL 9 ships 2.34. A binary linked against a newer
-# glibc will not run on an older host, so tools that ship a dedicated older-libc
-# build select it here instead of duplicating the ldd probe in every setup.sh.
+# ── glibc-aware Linux distro selection ──────────────────────────────────────
+# The devkit targets RHEL / Rocky 8, 9 and 10 (baseline: 9). Each major ships a
+# fixed glibc: 8 → 2.28, 9 → 2.34, 10 → 2.39. glibc is backward-compatible — a
+# binary linked against an older glibc runs on newer hosts, but not the reverse.
+# Tools that ship dedicated per-distro builds therefore select the closest
+# variant at or below the host's glibc here, instead of duplicating the probe in
+# every setup.sh.
 
 # devkit_glibc_minor — echo the glibc minor version (e.g. 28 for 2.28), or 0 if
-# ldd is unavailable (treated as "old" so the safer build is chosen).
+# ldd is unavailable (treated as "oldest" so the widest-compatible build wins).
 devkit_glibc_minor() {
     local minor
     minor=$(ldd --version 2>/dev/null | awk 'NR==1{split($NF,v,"."); print int(v[2])}')
     echo "${minor:-0}"
 }
 
+# devkit_rhel_major — echo the RHEL/Rocky major (10, 9, or 8) the host matches,
+# by glibc: >=2.39 → 10, >=2.34 → 9, else 8. Missing ldd → 8 (widest support).
+devkit_rhel_major() {
+    local minor; minor=$(devkit_glibc_minor)
+    if   (( minor >= 39 )); then echo 10
+    elif (( minor >= 34 )); then echo 9
+    else                         echo 8
+    fi
+}
+
+# devkit_rhel_tag — echo the EL variant tag matching the host: rhel10/rhel9/rhel8.
+devkit_rhel_tag() { echo "rhel$(devkit_rhel_major)"; }
+
+# devkit_rhel_tag_fallbacks — echo the ordered EL variant tags to try for this
+# host, from the closest match down to the universal glibc-2.28 floor (rhel8).
+# A per-distro build may not be staged yet; the floor always runs, so callers
+# can try each tag in turn and still install on any supported host.
+devkit_rhel_tag_fallbacks() {
+    case "$(devkit_rhel_major)" in
+        10) echo "rhel10 rhel9 rhel8" ;;
+        9)  echo "rhel9 rhel8" ;;
+        *)  echo "rhel8" ;;
+    esac
+}
+
 # devkit_linux_asset MODERN_ASSET OLD_ASSET [THRESHOLD]
-# Echo OLD_ASSET when the glibc minor version is below THRESHOLD (default 32,
-# i.e. anything older than glibc 2.32 such as RHEL 8) or when ldd is missing;
-# otherwise echo MODERN_ASSET.
+# Legacy two-way selector, retained for tools that ship only a "modern" and a
+# single older-libc build. Echo OLD_ASSET when the glibc minor is below
+# THRESHOLD (default 32, i.e. older than glibc 2.32 such as RHEL 8) or when ldd
+# is missing; otherwise echo MODERN_ASSET. Prefer devkit_rhel_tag_fallbacks for
+# new per-distro (8/9/10) tools.
 devkit_linux_asset() {
     local modern="$1" old="$2" threshold="${3:-32}"
     local minor; minor=$(devkit_glibc_minor)

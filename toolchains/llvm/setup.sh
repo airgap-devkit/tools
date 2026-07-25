@@ -10,13 +10,15 @@ PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     # The staged Windows parts keep the upstream URL-encoded '+' (%2B) in their
     # filename, so the archive base must match that encoded form byte-for-byte.
-    ARCHIVE_BASE="clang%2Bllvm-${VERSION}-x86_64-pc-windows-msvc"
+    ARCHIVE_BASES=("clang%2Bllvm-${VERSION}-x86_64-pc-windows-msvc")
 else
-    # RHEL 8 ships glibc 2.28; the standard build needs glibc >= 2.32, so older
-    # hosts get the dedicated RHEL 8 build. Missing ldd → the safer RHEL 8 build.
-    ARCHIVE_BASE="$(devkit_linux_asset \
-        "LLVM-${VERSION}-Linux-X64" \
-        "LLVM-${VERSION}-Linux-X64-rhel8")"
+    # Per-distro builds for RHEL/Rocky 8, 9 and 10. Try the closest EL variant
+    # at or below the host's glibc, then fall back toward the universal
+    # glibc-2.28 (rhel8) floor, which runs on every supported major.
+    ARCHIVE_BASES=()
+    for _tag in $(devkit_rhel_tag_fallbacks); do
+        ARCHIVE_BASES+=("LLVM-${VERSION}-Linux-X64-${_tag}")
+    done
 fi
 
 PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "clang-llvm")}"
@@ -34,12 +36,21 @@ if [[ ! -d "$PARTS_DIR" ]]; then
 fi
 
 # Resolve the archive (native .zip/.tar.gz preferred; assembles split parts).
-if ! ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")"; then
-    echo "ERROR: No archive found matching ${ARCHIVE_BASE}.* in $PARTS_DIR" >&2
-    if [[ "${ARCHIVE_BASE}" == *"-rhel8"* ]]; then
-        echo "       This system requires the RHEL 8 compatible LLVM binary (glibc 2.28)." >&2
-        echo "       Trigger the 'Build LLVM tools for RHEL 8' workflow in GitHub Actions" >&2
-        echo "       (.github/workflows/build-llvm-rhel8.yml) then re-initialise prebuilt/." >&2
+# Try each candidate base in fallback order; the first that resolves wins.
+ARCHIVE_BASE=""
+ARCHIVE_PATH=""
+for _base in "${ARCHIVE_BASES[@]}"; do
+    if ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$_base")"; then
+        ARCHIVE_BASE="$_base"; break
+    fi
+    ARCHIVE_PATH=""
+done
+if [[ -z "$ARCHIVE_PATH" ]]; then
+    echo "ERROR: No LLVM archive found (${ARCHIVE_BASES[*]}) in $PARTS_DIR" >&2
+    if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
+        echo "       This host (glibc 2.$(devkit_glibc_minor), $(devkit_rhel_tag)) needs a matching LLVM build." >&2
+        echo "       Trigger the 'Build LLVM tools (Linux, per-distro)' workflow" >&2
+        echo "       (.github/workflows/build-llvm-linux.yml) then re-initialise prebuilt/." >&2
     fi
     exit 1
 fi
@@ -60,8 +71,8 @@ devkit_install_archive "$ARCHIVE_PATH" "$PREFIX"
 if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
     if ! "$PREFIX/bin/clang-format" --version &>/dev/null; then
         echo "ERROR: clang-format was extracted but cannot execute — runtime library mismatch." >&2
-        echo "       Selected archive: ${ARCHIVE}" >&2
-        echo "       Run the 'Build LLVM tools for RHEL 8' workflow to produce a compatible binary." >&2
+        echo "       Selected archive: ${ARCHIVE_BASE}" >&2
+        echo "       Run the 'Build LLVM tools (Linux, per-distro)' workflow to produce a compatible binary." >&2
         exit 1
     fi
 fi

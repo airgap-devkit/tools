@@ -76,7 +76,7 @@ else
             echo "ERROR: Missing build dependencies:" >&2
             printf "  - %s\n" "${MISSING[@]}" >&2
             echo "" >&2
-            echo "On RHEL 8:" >&2
+            echo "On RHEL/Rocky 8/9/10:" >&2
             echo "  dnf install gcc cmake openssl-devel zlib-devel pkg-config" >&2
             echo "  (cmake: install from airgap-devkit first if system cmake is <3.14)" >&2
             exit 1

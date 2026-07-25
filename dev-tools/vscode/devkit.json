@@ -4,7 +4,7 @@
   "version": "1.127.0",
   "category": "Developer Tools",
   "platform": "both",
-  "description": "Lightweight, extensible source code editor with built-in Git, debugging, IntelliSense, and a rich extension ecosystem. Windows: Inno Setup installer. Linux: RPM package for RHEL 8/9.",
+  "description": "Lightweight, extensible source code editor with built-in Git, debugging, IntelliSense, and a rich extension ecosystem. Windows: Inno Setup installer. Linux: RPM package for RHEL 8/9/10.",
   "setup": "setup.sh",
   "receipt_name": "vscode",
   "estimate": "~45s",

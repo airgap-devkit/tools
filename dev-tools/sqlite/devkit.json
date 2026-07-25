@@ -4,7 +4,7 @@
   "version": "3.53.3",
   "category": "Developer Tools",
   "platform": "both",
-  "description": "Serverless SQL database engine with a command-line interface. Windows and modern Linux: sqlite-tools 3.53.3. RHEL 8: ships 3.26.0 from the glibc-compatible system RPM.",
+  "description": "Serverless SQL database engine with a command-line interface. Windows and modern Linux: sqlite-tools 3.53.3. RHEL/Rocky 8, 9 and 10: uses the distro-native system RPM for the host major (el8/el9/el10).",
   "setup": "setup.sh",
   "receipt_name": "sqlite",
   "estimate": "~15s",

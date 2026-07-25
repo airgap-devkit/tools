@@ -47,7 +47,7 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
     echo "ERROR: Missing build dependencies:" >&2
     printf "  - %s\n" "${MISSING[@]}" >&2
     echo "" >&2
-    echo "On RHEL 8, install via:" >&2
+    echo "On RHEL/Rocky 8/9/10, install via:" >&2
     echo "  dnf install gcc gcc-c++ make readline-devel ncurses-devel expat-devel" >&2
     exit 1
 fi
