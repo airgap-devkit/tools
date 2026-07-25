@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="conan"
-VERSION="2.30.0"
+VERSION="2.31.1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"

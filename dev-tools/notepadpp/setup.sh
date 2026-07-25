@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="notepadpp"
-VERSION="8.9.6.4"
+VERSION="8.9.7"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
 

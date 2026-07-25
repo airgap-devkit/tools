@@ -1,7 +1,7 @@
 {
   "id": "servy",
   "name": "Servy",
-  "version": "8.6",
+  "version": "8.7",
   "category": "Developer Tools",
   "platform": "windows",
   "description": "Lightweight Windows service manager for installing and supervising background processes.",

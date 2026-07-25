@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="osslsigncode"
-VERSION="2.13"
+VERSION="2.14"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=../../lib/devkit-install.sh
