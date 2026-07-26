@@ -10,6 +10,9 @@ PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     ARCHIVE_BASE="ninja-${VERSION}-windows"
     BINARY="ninja.exe"
+elif [[ "$(devkit_libc)" == "musl" ]]; then
+    ARCHIVE_BASE="ninja-${VERSION}-linux-musl"
+    BINARY="ninja"
 else
     ARCHIVE_BASE="ninja-${VERSION}-linux"
     BINARY="ninja"

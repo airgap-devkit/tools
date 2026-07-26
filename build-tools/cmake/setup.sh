@@ -10,6 +10,9 @@ PARTS_DIR="$PREBUILT_DIR/build-tools/cmake/${VERSION}"
 
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     ARCHIVE_BASE="cmake-${VERSION}-windows-x86_64"
+elif [[ "$(devkit_libc)" == "musl" ]]; then
+    # Kitware ships glibc-only binaries; musl hosts (Alpine) need the musl build.
+    ARCHIVE_BASE="cmake-${VERSION}-linux-x86_64-musl"
 else
     ARCHIVE_BASE="cmake-${VERSION}-linux-x86_64"
 fi
