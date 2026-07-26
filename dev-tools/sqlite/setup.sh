@@ -16,9 +16,26 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     DEFAULT_PREFIX="$(devkit_default_prefix "$TOOL")"
 else
     DEFAULT_PREFIX="$(devkit_default_prefix "$TOOL")"
-    # RHEL/Rocky: prefer the vendored, glibc-native RPM for the host major over
-    # the upstream tarball (which needs glibc 2.38+ and won't run on 8/9). One
-    # RPM per major is staged; pick the one matching the host (el8/el9/el10).
+
+    # Two-family path (preferred): a static sqlite3 binary matching the host libc
+    # needs no package manager and runs on every distro — glibc covers RHEL/Rocky/
+    # Debian/Ubuntu/SUSE/Arch/Fedora; musl covers Alpine. Selection is by libc.
+    _fam="$(devkit_libc)"
+    STATIC="$PARTS_DIR/sqlite3-${VERSION}-linux-x64-${_fam}"
+    if [[ -f "$STATIC" ]]; then
+        _sprefix="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"; _prev=""
+        for _arg in "$@"; do [[ "$_prev" == "--prefix" ]] && _sprefix="$_arg"; _prev="$_arg"; done
+        devkit_verify_archive "$PARTS_DIR/manifest.json" "$STATIC"
+        mkdir -p "$_sprefix/bin"
+        cp "$STATIC" "$_sprefix/bin/sqlite3"; chmod +x "$_sprefix/bin/sqlite3"
+        devkit_write_receipt "$TOOL" "$VERSION" "linux-${_fam}-static" "$_sprefix"
+        echo "==> SQLite ${VERSION} (static ${_fam}) installed to ${_sprefix}/bin"
+        exit 0
+    fi
+
+    # RHEL/Rocky fallback: the vendored, glibc-native RPM for the host major,
+    # preferred over the upstream tarball (which needs glibc 2.38+). One RPM per
+    # major is staged; pick the one matching the host (el8/el9/el10).
     _major="$(devkit_rhel_major)"
     RPM="$(ls "$PARTS_DIR"/sqlite-*.el${_major}*.x86_64.rpm 2>/dev/null | head -1)"
     if command -v rpm &>/dev/null && [[ -n "$RPM" && -f "$RPM" ]]; then
