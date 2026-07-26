@@ -12,11 +12,13 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     # filename, so the archive base must match that encoded form byte-for-byte.
     ARCHIVE_BASES=("clang%2Bllvm-${VERSION}-x86_64-pc-windows-msvc")
 else
-    # Per-distro builds for RHEL/Rocky 8, 9 and 10. Try the closest EL variant
-    # at or below the host's glibc, then fall back toward the universal
-    # glibc-2.28 (rhel8) floor, which runs on every supported major.
+    # Two-family model: musl hosts (Alpine) get the static "musl" build; glibc
+    # hosts prefer the dedicated "glibc" floor build, then fall back to the
+    # legacy per-RHEL-major builds (rhel8 is itself the glibc-2.28 floor, which
+    # runs on every glibc distro at or above it — RHEL/Rocky/Debian/Ubuntu/SUSE/
+    # Arch/Fedora). Selection is by libc, so new distros need no new code.
     ARCHIVE_BASES=()
-    for _tag in $(devkit_rhel_tag_fallbacks); do
+    for _tag in $(devkit_linux_tag_fallbacks); do
         ARCHIVE_BASES+=("LLVM-${VERSION}-Linux-X64-${_tag}")
     done
 fi
@@ -48,8 +50,8 @@ done
 if [[ -z "$ARCHIVE_PATH" ]]; then
     echo "ERROR: No LLVM archive found (${ARCHIVE_BASES[*]}) in $PARTS_DIR" >&2
     if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
-        echo "       This host (glibc 2.$(devkit_glibc_minor), $(devkit_rhel_tag)) needs a matching LLVM build." >&2
-        echo "       Trigger the 'Build LLVM tools (Linux, per-distro)' workflow" >&2
+        echo "       This host ($(devkit_distro_id), $(devkit_libc), glibc 2.$(devkit_glibc_minor)) needs a matching LLVM build." >&2
+        echo "       Trigger the 'Build LLVM tools (Linux)' workflow" >&2
         echo "       (.github/workflows/build-llvm-linux.yml) then re-initialise prebuilt/." >&2
     fi
     exit 1

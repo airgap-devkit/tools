@@ -11,7 +11,11 @@ PARTS_DIR="$PREBUILT_DIR/languages/python"
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     # Use full package (35MB) for devkit; embed (12MB) is also available
     ARCHIVE_BASE="python-${VERSION}-amd64"
+elif [[ "$(devkit_libc)" == "musl" ]]; then
+    # Alpine / musl hosts use the statically-linked musl standalone build.
+    ARCHIVE_BASE="cpython-${VERSION}-linux-x64-musl"
 else
+    # glibc hosts (RHEL/Rocky/Debian/Ubuntu/SUSE/Arch/Fedora) use the glibc build.
     ARCHIVE_BASE="cpython-${VERSION}-linux-x64"
 fi
 

@@ -67,6 +67,60 @@ devkit_linux_asset() {
     if (( minor < threshold )); then echo "$old"; else echo "$modern"; fi
 }
 
+# ── C-library family selection (two-family distribution model) ───────────────
+# The devkit ships at most two Linux artifact families that between them cover
+# every mainstream distro:
+#   glibc — one build against the oldest supported glibc (the "floor"). Because
+#           glibc is backward-compatible, it runs on any glibc host at or above
+#           that floor: RHEL/Rocky 8/9/10, Debian 10+, Ubuntu 20.04+, SUSE/SLES
+#           15+, Arch, Fedora, ...
+#   musl  — one fully-static musl build. It has no libc dependency at all, so it
+#           runs on Alpine (musl) and, as a universal fallback, anywhere else.
+# Detection is by libc, not by distro name, so new distros need no new code.
+
+# devkit_libc — echo the host C library family: "musl" or "glibc".
+# musl's ldd prints "musl libc ..."; the musl loader also lives at
+# /lib/ld-musl-<arch>.so.1. Everything else is treated as glibc.
+devkit_libc() {
+    if ldd --version 2>&1 | grep -qi 'musl'; then
+        echo "musl"
+    elif compgen -G '/lib/ld-musl-*.so.1' >/dev/null 2>&1; then
+        echo "musl"
+    else
+        echo "glibc"
+    fi
+}
+
+# devkit_distro_id — echo the /etc/os-release ID (e.g. rhel, rocky, debian,
+# ubuntu, sles, opensuse-leap, arch, alpine, fedora), or "linux" if unknown.
+# Used for human-readable messaging; artifact selection keys off libc, not this.
+devkit_distro_id() {
+    local id="linux"
+    if [[ -r /etc/os-release ]]; then
+        # shellcheck disable=SC1091
+        id="$( . /etc/os-release 2>/dev/null && echo "${ID:-linux}" )"
+    fi
+    echo "${id:-linux}"
+}
+
+# devkit_linux_family — echo the primary artifact family tag for this host:
+# "musl" or "glibc".
+devkit_linux_family() { devkit_libc; }
+
+# devkit_linux_tag_fallbacks — echo the ordered artifact tags to try for the
+# host, most-preferred first. musl hosts get "musl". glibc hosts prefer the
+# dedicated "glibc" floor build, then fall back to the legacy per-RHEL-major
+# builds (rhel8 is itself the glibc-2.28 floor, so it runs on any glibc >= 2.28).
+# This keeps already-staged rhel8/9/10 artifacts working during the migration to
+# the two-family model.
+devkit_linux_tag_fallbacks() {
+    if [[ "$(devkit_libc)" == "musl" ]]; then
+        echo "musl"
+    else
+        echo "glibc rhel8 rhel9 rhel10"
+    fi
+}
+
 # ── Integrity verification ──────────────────────────────────────────────────
 # devkit_verify_sha256 FILE EXPECTED_HEX
 # Aborts (exit 1) on mismatch; returns 0 on match. If no sha256 tool exists on
