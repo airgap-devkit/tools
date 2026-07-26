@@ -122,9 +122,15 @@ devkit_linux_tag_fallbacks() {
 }
 
 # ── Integrity verification ──────────────────────────────────────────────────
+# Every prebuilt-archive install is integrity-gated: the archive (or, for a split
+# archive, each part) must match the sha256 recorded in the tool's manifest.json
+# before it is unpacked. Verification is fail-closed — a missing manifest, a
+# missing hash entry, or the absence of a sha256 tool aborts the install rather
+# than proceeding unverified.
+
 # devkit_verify_sha256 FILE EXPECTED_HEX
-# Aborts (exit 1) on mismatch; returns 0 on match. If no sha256 tool exists on
-# the host, warns and returns 0 rather than blocking an otherwise valid install.
+# Aborts (exit 1) on mismatch or when no sha256 tool is available; returns 0 on
+# match. Verification is mandatory, so a host with no sha256 tool is a failure.
 devkit_verify_sha256() {
     local file="$1" expected="$2"
     [[ -f "$file" ]] || { echo "ERROR: verify: file not found: $file" >&2; exit 1; }
@@ -134,8 +140,8 @@ devkit_verify_sha256() {
     elif command -v shasum &>/dev/null; then
         actual=$(shasum -a 256 "$file" | awk '{print $1}')
     else
-        echo "    [WARN] no sha256 tool available; skipping integrity check for $(basename "$file")" >&2
-        return 0
+        echo "ERROR: verify: no sha256 tool (sha256sum/shasum) available; cannot confirm integrity of $(basename "$file")" >&2
+        exit 1
     fi
     if [[ "${actual,,}" != "${expected,,}" ]]; then
         echo "ERROR: checksum mismatch for $(basename "$file")" >&2
@@ -164,24 +170,69 @@ devkit_manifest_sha256() {
         | grep -oE '[0-9a-fA-F]{64}' || true
 }
 
-# devkit_verify_archive MANIFEST_JSON ARCHIVE_PATH
-# Look up ARCHIVE_PATH's expected sha256 in MANIFEST_JSON and verify it. Warns
-# (does not fail) when the manifest or the hash entry is missing, so tools whose
-# manifests predate checksum coverage still install; a present-but-mismatched
-# hash is a hard failure.
-devkit_verify_archive() {
-    local manifest="$1" archive_path="$2"
-    local base; base="$(basename "$archive_path")"
+# devkit_manifest_part_sha256 MANIFEST_JSON PART_NAME
+# Extract the expected sha256 for a single split-archive part from the manifest's
+# "part_sha256" map. A part filename carries no 64-hex run of its own, so the only
+# 64-hex token on its line is the hash. Prints empty when none is found.
+devkit_manifest_part_sha256() {
+    local manifest="$1" part="$2"
+    [[ -f "$manifest" ]] || return 0
+    # Trailing `|| true`: a no-match must yield empty output with exit 0 so a
+    # caller's `hash="$(devkit_manifest_part_sha256 …)"` never trips `set -e`.
+    grep -F "\"${part}\"" "$manifest" 2>/dev/null \
+        | grep -oE '[0-9a-fA-F]{64}' \
+        | head -1 || true
+}
+
+# devkit_verify_staged DIR ARCHIVE_BASENAME
+# Fail-closed integrity gate for a staged prebuilt archive in DIR. When DIR holds
+# split parts (ARCHIVE_BASENAME.part-*), every part is verified against the
+# manifest's part_sha256 map; otherwise the whole archive is verified against its
+# sha256 entry. A missing manifest, a missing hash, or a mismatch aborts. Callers
+# whose stdout is captured (the resolvers below) must redirect this to stderr, as
+# a successful verify prints an "[OK]" line.
+devkit_verify_staged() {
+    local dir="$1" base="$2"
+    local manifest="$dir/manifest.json"
     if [[ ! -f "$manifest" ]]; then
-        echo "    [WARN] no manifest at ${manifest}; skipping integrity check" >&2
+        echo "ERROR: integrity: no manifest.json in ${dir}; refusing to install ${base} unverified" >&2
+        exit 1
+    fi
+
+    # Split archive: verify each staged part before it is ever assembled.
+    if ls "$dir/$base".part-* &>/dev/null; then
+        local part pname hash verified=0
+        for part in "$dir/$base".part-*; do
+            [[ -f "$part" ]] || continue
+            pname="$(basename "$part")"
+            hash="$(devkit_manifest_part_sha256 "$manifest" "$pname")"
+            if [[ -z "$hash" ]]; then
+                echo "ERROR: integrity: no part_sha256 for ${pname} in ${manifest}; refusing to install unverified" >&2
+                exit 1
+            fi
+            devkit_verify_sha256 "$part" "$hash"
+            verified=$((verified + 1))
+        done
+        [[ "$verified" -gt 0 ]] || { echo "ERROR: integrity: no parts found for ${base} in ${dir}" >&2; exit 1; }
         return 0
     fi
+
+    # Whole-file archive.
     local expected; expected="$(devkit_manifest_sha256 "$manifest" "$base")"
     if [[ -z "$expected" ]]; then
-        echo "    [WARN] no sha256 for ${base} in manifest; skipping integrity check" >&2
-        return 0
+        echo "ERROR: integrity: no sha256 for ${base} in ${manifest}; refusing to install unverified" >&2
+        exit 1
     fi
-    devkit_verify_sha256 "$archive_path" "$expected"
+    devkit_verify_sha256 "$dir/$base" "$expected"
+}
+
+# devkit_verify_archive MANIFEST_JSON ARCHIVE_PATH
+# Backward-compatible wrapper around devkit_verify_staged: verifies the archive
+# named by ARCHIVE_PATH using the manifest and the parts/whole file staged
+# alongside it (the manifest's own directory). Fail-closed.
+devkit_verify_archive() {
+    local manifest="$1" archive_path="$2"
+    devkit_verify_staged "$(dirname "$manifest")" "$(basename "$archive_path")"
 }
 
 # ── Split-archive assembly ──────────────────────────────────────────────────
@@ -239,8 +290,16 @@ devkit_resolve_archive() {
     local dir="$1" base="$2" ext f out
     for ext in zip tar.gz tar.xz; do
         f="$dir/$base.$ext"
-        if [[ -f "$f" ]]; then echo "$f"; return 0; fi
+        if [[ -f "$f" ]]; then
+            # Integrity-gate the whole file before handing it back (stdout is
+            # captured by the caller, so verification output goes to stderr).
+            devkit_verify_staged "$dir" "$base.$ext" >&2
+            echo "$f"; return 0
+        fi
         if ls "$dir/$base.$ext".part-aa &>/dev/null; then
+            # Verify every part against the manifest before assembling, so a
+            # corrupt or tampered part never reaches the joined archive.
+            devkit_verify_staged "$dir" "$base.$ext" >&2
             # Assemble in place when the prebuilt dir is writable, else into a
             # temp dir (the prebuilt tree is read-only under a system prefix or
             # a non-root CI user). A failed write must return 1 — never echo a
@@ -270,10 +329,14 @@ devkit_find_file() {
     local dir="$1"
     local plat="${2:-$DEVKIT_PLATFORM}"
 
+    # Every return path below is integrity-gated against the manifest in $dir.
+    # stdout is captured by the caller, so verification output goes to stderr.
+
     # 1. Assemble platform-specific split parts if present.
     local assembled
     assembled=$(devkit_assemble_parts "$dir" "$plat")
     if [[ -n "$assembled" ]]; then
+        devkit_verify_staged "$dir" "$(basename "$assembled")" >&2
         echo "$assembled"
         return 0
     fi
@@ -281,6 +344,7 @@ devkit_find_file() {
     # 2. No platform-specific parts — try unfiltered (single-platform dirs).
     assembled=$(devkit_assemble_parts "$dir")
     if [[ -n "$assembled" ]]; then
+        devkit_verify_staged "$dir" "$(basename "$assembled")" >&2
         echo "$assembled"
         return 0
     fi
@@ -291,14 +355,20 @@ devkit_find_file() {
         | grep -v "\.part-" | grep -v "manifest" \
         | grep -iE "\.(exe|msi|tar\.xz|tar\.gz|zip|deb|rpm)$" \
         | grep -i "$plat" | head -1)
-    if [[ -n "$file" ]]; then echo "$dir/$file"; return 0; fi
+    if [[ -n "$file" ]]; then
+        devkit_verify_staged "$dir" "$file" >&2
+        echo "$dir/$file"; return 0
+    fi
 
     # 4. Any installer (last resort, no platform filter).
     file=$(ls "$dir" 2>/dev/null \
         | grep -v "\.part-" | grep -v "manifest" \
         | grep -iE "\.(exe|msi|tar\.xz|tar\.gz|zip|deb|rpm)$" \
         | head -1)
-    if [[ -n "$file" ]]; then echo "$dir/$file"; return 0; fi
+    if [[ -n "$file" ]]; then
+        devkit_verify_staged "$dir" "$file" >&2
+        echo "$dir/$file"; return 0
+    fi
 
     return 1
 }
