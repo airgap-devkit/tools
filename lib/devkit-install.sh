@@ -433,13 +433,20 @@ devkit_extract() {
             echo "==> Extracting ${name} → ${dest}"
             if command -v unzip &>/dev/null; then
                 unzip -qo "$file" -d "$dest"
-            else
-                # PowerShell fallback (always available on Windows)
+            elif [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+                # PowerShell fallback — Windows only (needs cygpath + Expand-Archive).
                 local fw dw
                 fw="$(cygpath -w "$file")"
                 dw="$(cygpath -w "$dest")"
                 powershell.exe -NoProfile -NonInteractive -Command \
                     "Expand-Archive -Force -Path '$fw' -DestinationPath '$dw'"
+            elif command -v python3 &>/dev/null; then
+                # Linux/musl without unzip (e.g. minimal Debian/Alpine): the devkit
+                # Python is on PATH by this point and can extract zips.
+                python3 -m zipfile -e "$file" "$dest"
+            else
+                echo "ERROR: cannot extract ${name}: need 'unzip' or python3." >&2
+                exit 1
             fi
             ;;
         *)
