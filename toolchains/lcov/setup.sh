@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Report the exact failing command/line if this script aborts (diagnostic).
+trap 'rc=$?; echo "ERROR: lcov/setup.sh aborted at line ${LINENO} (exit ${rc}): ${BASH_COMMAND}" >&2' ERR
 
 TOOL="lcov"
 VERSION="2.5"
