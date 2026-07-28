@@ -34,7 +34,9 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
 fi
 devkit_install_archive "$ARCHIVE_PATH" "$PREFIX"
 if [[ "$DEVKIT_PLATFORM" == "linux" ]]; then
-    find "$PREFIX/bin" -maxdepth 1 -type f -exec chmod +x {} +
+    # Bash glob instead of `find`: minimal hosts (stripped RHEL 8 containers) may
+    # not ship findutils, and the whole install shouldn't die for a chmod.
+    for _f in "$PREFIX"/bin/*; do [[ -f "$_f" ]] && chmod +x "$_f"; done
 fi
 
 devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"

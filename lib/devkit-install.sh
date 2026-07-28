@@ -541,7 +541,19 @@ devkit_install_archive() {
         root="${entries[0]}"
     fi
     mkdir -p "$dest"
-    ( shopt -s dotglob; mv "$root"/* "$dest"/ )
+    # Overwrite in place: a plain `mv root/* dest/` fails on re-install because
+    # mv refuses to merge a source dir onto an existing non-empty dest dir
+    # (e.g. dest/bin already present). Replace each top-level entry instead, so a
+    # second install over the same prefix succeeds and reflects the new payload.
+    (
+        shopt -s dotglob
+        local _entry _name
+        for _entry in "$root"/*; do
+            _name="$(basename "$_entry")"
+            rm -rf "$dest/$_name"
+            mv "$_entry" "$dest/"
+        done
+    )
     rm -rf "$tmp"
 }
 

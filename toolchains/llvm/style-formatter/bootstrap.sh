@@ -85,11 +85,21 @@ CFG
     echo "    Created ${CLANG_FORMAT_CFG} (BasedOnStyle: LLVM, indent 4, column 120)"
 fi
 
-cat > "$TARGET_REPO/INSTALL_RECEIPT.txt" << RECEIPT 2>/dev/null || true
+# Drop the install receipt under the devkit prefix (receipt_name
+# "clang-style-formatter") so the dashboard and smoke tests can discover it —
+# and so we don't leave an INSTALL_RECEIPT.txt sitting in the user's own repo.
+# INSTALL_PREFIX_OVERRIDE is exported by install-cli.sh; fall back to the
+# standard per-user prefix when the bootstrap is run standalone.
+_receipt_root="${INSTALL_PREFIX_OVERRIDE:-${HOME}/.local/share/airgap-cpp-devkit}"
+_receipt_dir="${_receipt_root}/clang-style-formatter"
+mkdir -p "$_receipt_dir" 2>/dev/null || true
+cat > "$_receipt_dir/INSTALL_RECEIPT.txt" << RECEIPT 2>/dev/null || true
 tool=clang-style-formatter
 version=${CLANG_FORMAT_VERSION}
 platform=both
+install_prefix=${_receipt_dir}
 installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+hook=${HOOK_FILE}
 RECEIPT
 
 echo "==> Style formatter hook installed at ${HOOK_FILE}"

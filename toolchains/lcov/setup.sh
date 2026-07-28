@@ -55,9 +55,12 @@ elif [[ -f "$SOURCE_ARCHIVE" ]]; then
     [[ -f "$SRC/Makefile" ]] || SRC="$TMP"
     # A .zip source archive does not preserve the execute bit, so the helper
     # scripts that `make install` invokes come out non-executable (make would
-    # otherwise fail with exit 126). Restore it before installing.
-    find "$SRC" -type f \( -name '*.pl' -o -name '*.sh' -o -path '*/bin/*' \) \
-        -exec chmod +x {} + 2>/dev/null || true
+    # otherwise fail with exit 126). Restore it before installing. Use a bash
+    # glob rather than `find` so the install works on hosts without findutils.
+    ( shopt -s globstar nullglob
+      for _f in "$SRC"/**/*.pl "$SRC"/**/*.sh "$SRC"/bin/* "$SRC"/**/bin/*; do
+          [[ -f "$_f" ]] && chmod +x "$_f" 2>/dev/null || true
+      done )
     make -C "$SRC" install PREFIX="$PREFIX"
     rm -rf "$TMP"
     _install_perl_vendor "$PREFIX/lib/lcov"
@@ -65,6 +68,31 @@ else
     echo "ERROR: Neither RPM nor source archive found for lcov ${VERSION}" >&2
     exit 1
 fi
+
+# lcov (coverage capture) runs on core Perl, but genhtml's HTML-report step needs
+# extra Perl modules (DateTime, Date::Parse, Capture::Tiny, ...) that ship in the
+# perl-vendor-lcov archive. If they aren't resolvable, say so plainly rather than
+# reporting a clean success that hides a genhtml which cannot run.
+_verify_genhtml() {
+    local gh="$PREFIX/bin/genhtml"
+    [[ -x "$gh" ]] || gh="$(command -v genhtml 2>/dev/null || true)"
+    [[ -n "$gh" && -x "$gh" ]] || return 0
+    local plib="$PREFIX/lib/lcov:$PREFIX/lib:/usr/lib/lcov"
+    local out
+    if out="$(PERL5LIB="${plib}${PERL5LIB:+:$PERL5LIB}" "$gh" --version 2>&1)"; then
+        return 0
+    fi
+    echo "  [!!] lcov installed, but genhtml cannot run — its HTML-report step is unavailable." >&2
+    local mods
+    mods="$(printf '%s\n' "$out" \
+        | grep -oE "Can't locate [A-Za-z0-9_/]+\.pm" \
+        | sed "s#Can't locate ##; s#/#::#g; s#\.pm##" \
+        | sort -u | paste -sd', ' - || true)"
+    [[ -n "$mods" ]] && echo "       Missing Perl modules: ${mods}" >&2
+    echo "       Coverage capture (lcov) still works; only genhtml HTML output is affected." >&2
+    echo "       Stage these modules into the perl-vendor-lcov prebuilt archive to enable it." >&2
+}
+_verify_genhtml
 
 devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
 
