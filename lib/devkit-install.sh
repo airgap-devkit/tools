@@ -249,19 +249,21 @@ devkit_platform_keys() {
 }
 
 # devkit_manifest_archive MANIFEST PLATFORM_KEY...
-# Echo the platforms.<key>.archive filename for the first key that has one.
-# Manifest-driven artifact selection is authoritative and locale-independent —
-# unlike guessing from filenames, which is order-dependent when no filename
-# carries the platform keyword. grep-only (no jq/python), like the sha helpers.
+# Echo the platforms.<key>.archive (or .installer) filename for the first key
+# that has one. Manifests name the payload "archive" for tarballs/zips and
+# "installer" for native installers (.exe/.msi) — both are the file to hand to
+# the extractor/installer, so match either. Manifest-driven selection is
+# authoritative and locale-independent, unlike guessing from filenames.
+# grep-only (no jq/python), like the sha helpers.
 devkit_manifest_archive() {
     local manifest="$1"; shift
     [[ -f "$manifest" ]] || return 0
     local key val
     for key in "$@"; do
         # The platform key line ("windows": {) is immediately followed by its
-        # "archive": "<name>" field; -A3 covers any intervening whitespace/keys.
+        # "archive"/"installer" field; -A3 covers any intervening whitespace/keys.
         val="$(grep -A3 -E "\"${key}\"[[:space:]]*:[[:space:]]*\{" "$manifest" 2>/dev/null \
-            | grep -oE '"archive"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 \
+            | grep -oE '"(archive|installer)"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 \
             | sed -E 's/.*:[[:space:]]*"([^"]+)"/\1/')"
         [[ -n "$val" ]] && { echo "$val"; return 0; }
     done
