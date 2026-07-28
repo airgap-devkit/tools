@@ -14,7 +14,6 @@
   "uses_prebuilt": true,
   "sort_order": 53,
   "source": "default",
-  "check_cmd": "code --version",
   "packages": [
     {"name": "C/C++",                "id": "ms-vscode.cpptools",                  "version": "1.31.5",              "description": "IntelliSense, debugging and code browsing for C/C++"},
     {"name": "CMake Tools",          "id": "ms-vscode.cmake-tools",               "version": "1.23.52",             "description": "Configure, build, and debug CMake projects"},

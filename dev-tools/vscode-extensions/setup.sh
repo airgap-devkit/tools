@@ -24,9 +24,20 @@ done
 
 echo "==> Installing VS Code Extensions (offline)"
 
+# Fail-closed integrity gate: every VSIX (whole or split) must match the sha256
+# recorded in the bundle manifest before it is installed. Without this the
+# extensions — including a split 120 MB cpptools payload — would install with no
+# verification at all.
+MANIFEST="$VSIX_DIR/manifest.json"
+if [[ ! -f "$MANIFEST" ]]; then
+    echo "ERROR: integrity: no manifest.json in ${VSIX_DIR}; refusing to install extensions unverified." >&2
+    exit 1
+fi
+
 # Reassemble any split VSIX archives (*.vsix.part-aa, *.vsix.part-ab, …)
 # into a temp directory before installing. Split parts are used for files
-# that exceed GitHub's 100 MB per-file limit.
+# that exceed GitHub's 100 MB per-file limit. Each part is verified against the
+# manifest before it is concatenated, so a tampered part never reaches 'code'.
 EXTRA_VSIX_DIR=""
 mapfile -t SPLIT_BASES < <(
     find "$VSIX_DIR" -maxdepth 1 -name "*.vsix.part-aa" 2>/dev/null | sort | sed 's/\.part-aa$//'
@@ -36,6 +47,7 @@ if [[ ${#SPLIT_BASES[@]} -gt 0 ]]; then
     trap 'rm -rf "$EXTRA_VSIX_DIR"' EXIT
     for base in "${SPLIT_BASES[@]}"; do
         name="$(basename "$base")"
+        devkit_verify_staged "$VSIX_DIR" "$name"      # fail-closed: aborts on mismatch
         parts=("${base}.part-"*)
         echo "    Assembling ${name} from ${#parts[@]} parts..."
         cat "${parts[@]}" > "$EXTRA_VSIX_DIR/${name}"
@@ -68,6 +80,20 @@ if [[ ${#VSIX_FILES[@]} -eq 0 ]]; then
 fi
 
 echo "    Found ${#VSIX_FILES[@]} extension(s) in ${VSIX_DIR}"
+
+# Verify every shipped whole-file VSIX against the manifest before installing any
+# of them (assembled split files came from parts already verified above). A bad
+# hash aborts the whole bundle rather than installing part of it.
+for vsix in "${VSIX_FILES[@]}"; do
+    [[ "$(dirname "$vsix")" == "$VSIX_DIR" ]] || continue   # skip assembled temp files
+    _vname="$(basename "$vsix")"
+    _vhash="$(devkit_manifest_sha256 "$MANIFEST" "$_vname")"
+    if [[ -z "$_vhash" ]]; then
+        echo "ERROR: integrity: no sha256 for ${_vname} in ${MANIFEST}; refusing to install unverified." >&2
+        exit 1
+    fi
+    devkit_verify_sha256 "$vsix" "$_vhash"
+done
 echo ""
 
 INSTALLED=()
@@ -107,8 +133,16 @@ for vsix in "${VSIX_FILES[@]}"; do
 done
 
 echo ""
-devkit_write_receipt "$TOOL" "various" "$DEVKIT_PLATFORM" "$PREFIX" \
-    "installed_count=${#INSTALLED[@]}"
+# Only attest success when at least one extension actually installed. Writing a
+# receipt unconditionally (combined with a "code --version" check) is what made
+# the bundle report installed=true with zero extensions present; the bundle's
+# real state is the per-package status (/api/tool/<id>/packages/status).
+if [[ ${#INSTALLED[@]} -gt 0 ]]; then
+    devkit_write_receipt "$TOOL" "various" "$DEVKIT_PLATFORM" "$PREFIX" \
+        "installed_count=${#INSTALLED[@]}"
+else
+    echo "  [!!] No extensions installed — not writing a success receipt." >&2
+fi
 
 echo "==> VS Code Extensions: ${#INSTALLED[@]} installed, ${#FAILED[@]} failed."
 if [[ ${#FAILED[@]} -gt 0 ]]; then

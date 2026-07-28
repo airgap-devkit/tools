@@ -235,6 +235,63 @@ devkit_verify_archive() {
     devkit_verify_staged "$(dirname "$manifest")" "$(basename "$archive_path")"
 }
 
+# devkit_platform_keys PLATFORM
+# Echo the candidate manifest platform keys to try for a devkit platform, most
+# specific first. Manifests name platforms variously (e.g. "linux-x64",
+# "windows"); this maps our "linux"/"windows" onto those without each caller
+# hard-coding the spelling.
+devkit_platform_keys() {
+    case "$1" in
+        windows) echo "windows windows-x64 win64 win windows-amd64" ;;
+        linux)   echo "linux-x64 linux linux-amd64 linux-x86_64" ;;
+        *)       echo "$1" ;;
+    esac
+}
+
+# devkit_manifest_archive MANIFEST PLATFORM_KEY...
+# Echo the platforms.<key>.archive filename for the first key that has one.
+# Manifest-driven artifact selection is authoritative and locale-independent —
+# unlike guessing from filenames, which is order-dependent when no filename
+# carries the platform keyword. grep-only (no jq/python), like the sha helpers.
+devkit_manifest_archive() {
+    local manifest="$1"; shift
+    [[ -f "$manifest" ]] || return 0
+    local key val
+    for key in "$@"; do
+        # The platform key line ("windows": {) is immediately followed by its
+        # "archive": "<name>" field; -A3 covers any intervening whitespace/keys.
+        val="$(grep -A3 -E "\"${key}\"[[:space:]]*:[[:space:]]*\{" "$manifest" 2>/dev/null \
+            | grep -oE '"archive"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 \
+            | sed -E 's/.*:[[:space:]]*"([^"]+)"/\1/')"
+        [[ -n "$val" ]] && { echo "$val"; return 0; }
+    done
+    return 0
+}
+
+# devkit_resolve_named DIR ARCHIVE_NAME
+# Resolve a staged archive by its exact filename (extension included), as named
+# by a manifest. Split parts take precedence and are ALWAYS assembled fresh from
+# the verified parts into a temp file — a cached or planted whole file at
+# "$dir/$name" is never handed to the extractor unverified. Fail-closed: a
+# missing/failed hash aborts. Echoes the path to extract; returns 1 if absent.
+devkit_resolve_named() {
+    local dir="$1" name="$2" out
+    if ls "$dir/$name".part-aa &>/dev/null; then
+        devkit_verify_staged "$dir" "$name" >&2      # hashes every part, fail-closed
+        out="$(mktemp -d)/$name"
+        if ! cat "$dir/$name".part-* > "$out" 2>/dev/null; then
+            echo "ERROR: failed to reassemble ${name}." >&2
+            return 1
+        fi
+        echo "$out"; return 0
+    fi
+    if [[ -f "$dir/$name" ]]; then
+        devkit_verify_staged "$dir" "$name" >&2      # whole-file sha256, fail-closed
+        echo "$dir/$name"; return 0
+    fi
+    return 1
+}
+
 # ── Split-archive assembly ──────────────────────────────────────────────────
 # devkit_assemble_parts DIR [PLATFORM_FILTER]
 # If DIR contains .part-aa/.part-ab/... files (optionally filtered by a
@@ -260,21 +317,18 @@ devkit_assemble_parts() {
     local stem="${first_part%.part-aa}"   # full path, extension kept
     local base; base="$(basename "$stem")"
 
-    # Reuse an already-assembled whole file if one is present in the source dir.
-    if [[ -f "$stem" ]]; then echo "$stem"; return 0; fi
-
-    # Assemble in place only when the prebuilt dir is writable; otherwise write
-    # to a temp dir. The prebuilt tree is read-only when the devkit is vendored
-    # under a system prefix or run by a non-root user (e.g. the RHEL 8 CI
-    # container, where /workspace is root-owned but installs run as `devkit`).
-    local target
-    if [[ -w "$dir" ]]; then target="$stem"; else target="$(mktemp -d)/$base"; fi
+    # Always assemble fresh from the parts into a temp dir — never reuse or write
+    # a whole file next to the parts. The caller verifies the parts against the
+    # manifest, so the assembled bytes are exactly cat(verified parts). Reusing a
+    # cached (or planted) whole file at "$stem" would hand the extractor a file
+    # the integrity gate never checked, since the gate hashes the parts.
+    local target; target="$(mktemp -d)/$base"
 
     echo "==> Assembling split archive: ${base}..." >&2
     # Only cat the parts that belong to this specific base file. A failed write
     # must abort — never return a path to a file that was not created.
     if ! cat "${stem}.part-"* > "$target" 2>/dev/null; then
-        echo "ERROR: failed to reassemble ${base} — no writable location for the joined archive." >&2
+        echo "ERROR: failed to reassemble ${base}." >&2
         return 1
     fi
     echo "    $(du -sh "$target" 2>/dev/null | cut -f1) assembled" >&2
@@ -287,29 +341,21 @@ devkit_assemble_parts() {
 # split parts (BASE.ext.part-aa...) into the whole file when it is absent.
 # Echoes the resolved archive path; returns 1 if nothing matches.
 devkit_resolve_archive() {
-    local dir="$1" base="$2" ext f out
+    local dir="$1" base="$2" ext
     for ext in zip tar.gz tar.xz; do
-        f="$dir/$base.$ext"
-        if [[ -f "$f" ]]; then
-            # Integrity-gate the whole file before handing it back (stdout is
-            # captured by the caller, so verification output goes to stderr).
-            devkit_verify_staged "$dir" "$base.$ext" >&2
-            echo "$f"; return 0
+        local name="$base.$ext"
+        # Split parts take PRECEDENCE over any co-located whole file: assemble
+        # ONLY from the verified parts into a fresh temp file, so a cached or
+        # planted "$dir/$name" can never be substituted for what the gate checked.
+        if ls "$dir/$name".part-aa &>/dev/null; then
+            devkit_resolve_named "$dir" "$name" && return 0
+            return 1
         fi
-        if ls "$dir/$base.$ext".part-aa &>/dev/null; then
-            # Verify every part against the manifest before assembling, so a
-            # corrupt or tampered part never reaches the joined archive.
-            devkit_verify_staged "$dir" "$base.$ext" >&2
-            # Assemble in place when the prebuilt dir is writable, else into a
-            # temp dir (the prebuilt tree is read-only under a system prefix or
-            # a non-root CI user). A failed write must return 1 — never echo a
-            # path to a file that was not actually created.
-            if [[ -w "$dir" ]]; then out="$f"; else out="$(mktemp -d)/$base.$ext"; fi
-            if ! cat "$dir/$base.$ext".part-* > "$out" 2>/dev/null; then
-                echo "ERROR: failed to reassemble $base.$ext — no writable location for the joined archive." >&2
-                return 1
-            fi
-            echo "$out"; return 0
+        # Genuine whole-file archive (no parts): verify against the manifest's
+        # whole-file sha256 before handing it back. Fail-closed.
+        if [[ -f "$dir/$name" ]]; then
+            devkit_verify_staged "$dir" "$name" >&2
+            echo "$dir/$name"; return 0
         fi
     done
     return 1
@@ -317,14 +363,15 @@ devkit_resolve_archive() {
 
 # ── File discovery ──────────────────────────────────────────────────────────
 # devkit_find_file DIR [PLATFORM]
-# Returns the best installer file for PLATFORM in DIR.
+# Returns the installer file for PLATFORM in DIR.
 #
-# Search order:
-#   1. Platform-filtered split-part assembly (e.g. only linux .part-aa files)
-#   2. Unfiltered split-part assembly (single-platform dirs that have no
-#      platform keyword in the filename)
-#   3. Pre-assembled platform-specific file (contains the platform keyword)
-#   4. Any installer file (last-resort, no platform filter)
+# Selection order:
+#   0. Manifest-driven — platforms.<plat>.archive (authoritative, deterministic)
+#   1. Legacy fallback for manifests without a platforms map: assemble split
+#      parts / pick the pre-assembled file, keyed off the filename. This path is
+#      only safe when the dir holds a single distinct base archive; a dir with
+#      more than one (e.g. a per-platform bundle) is ambiguous and errors rather
+#      than picking one by locale-dependent sort order.
 devkit_find_file() {
     local dir="$1"
     local plat="${2:-$DEVKIT_PLATFORM}"
@@ -332,16 +379,41 @@ devkit_find_file() {
     # Every return path below is integrity-gated against the manifest in $dir.
     # stdout is captured by the caller, so verification output goes to stderr.
 
-    # 1. Assemble platform-specific split parts if present.
-    local assembled
-    assembled=$(devkit_assemble_parts "$dir" "$plat")
-    if [[ -n "$assembled" ]]; then
-        devkit_verify_staged "$dir" "$(basename "$assembled")" >&2
-        echo "$assembled"
-        return 0
+    # 0. Manifest-driven selection. When the manifest declares per-platform
+    #    archives, pick this platform's archive by NAME — never guess from
+    #    filenames (that guess is order/locale-dependent when no filename carries
+    #    the platform keyword, and can hand a Windows .exe to a Linux host).
+    local mname
+    mname="$(devkit_manifest_archive "$dir/manifest.json" $(devkit_platform_keys "$plat"))"
+    if [[ -n "$mname" ]]; then
+        local resolved
+        if resolved="$(devkit_resolve_named "$dir" "$mname")"; then
+            echo "$resolved"; return 0
+        fi
+        echo "ERROR: manifest names '${mname}' for ${plat}, but it is missing or failed verification in ${dir}" >&2
+        return 1
     fi
 
-    # 2. No platform-specific parts — try unfiltered (single-platform dirs).
+    # --- Legacy fallback (manifest has no platforms map) ---------------------
+    # Guard against ambiguity: count distinct base archives (strip .part-* and
+    # any known extension). If more than one, refuse rather than sort-and-guess.
+    local bases
+    bases=$(ls "$dir" 2>/dev/null \
+        | grep -v "manifest" \
+        | sed -E 's/\.part-[a-z]+$//' \
+        | grep -iE "\.(exe|msi|tar\.xz|tar\.gz|zip|deb|rpm)$" \
+        | sort -u)
+    local n; n=$(printf '%s\n' "$bases" | grep -c . || true)
+    if [[ "$n" -gt 1 ]]; then
+        echo "ERROR: ${dir} holds ${n} distinct archives but its manifest declares no per-platform 'archive'." >&2
+        echo "       Add a platforms.<platform>.archive map to manifest.json so selection is unambiguous." >&2
+        printf '       candidate: %s\n' $bases >&2
+        return 1
+    fi
+
+    # Single distinct base — assemble split parts (temp, verified) or return the
+    # whole file, both integrity-gated.
+    local assembled
     assembled=$(devkit_assemble_parts "$dir")
     if [[ -n "$assembled" ]]; then
         devkit_verify_staged "$dir" "$(basename "$assembled")" >&2
@@ -349,18 +421,7 @@ devkit_find_file() {
         return 0
     fi
 
-    # 3. Platform-specific pre-assembled file (contains platform keyword).
     local file
-    file=$(ls "$dir" 2>/dev/null \
-        | grep -v "\.part-" | grep -v "manifest" \
-        | grep -iE "\.(exe|msi|tar\.xz|tar\.gz|zip|deb|rpm)$" \
-        | grep -i "$plat" | head -1)
-    if [[ -n "$file" ]]; then
-        devkit_verify_staged "$dir" "$file" >&2
-        echo "$dir/$file"; return 0
-    fi
-
-    # 4. Any installer (last resort, no platform filter).
     file=$(ls "$dir" 2>/dev/null \
         | grep -v "\.part-" | grep -v "manifest" \
         | grep -iE "\.(exe|msi|tar\.xz|tar\.gz|zip|deb|rpm)$" \
