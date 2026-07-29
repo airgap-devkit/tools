@@ -44,7 +44,10 @@ mapfile -t SPLIT_BASES < <(
 )
 if [[ ${#SPLIT_BASES[@]} -gt 0 ]]; then
     EXTRA_VSIX_DIR="$(mktemp -d)"
-    trap 'rm -rf "$EXTRA_VSIX_DIR"' EXIT
+    # Register via the library helper, not a bare `trap ... EXIT`: the latter
+    # would replace the lib's temp-root cleanup (and the decomp cleanup below),
+    # leaking both dirs — the assembled-VSIX dir here is ~120 MB.
+    devkit_add_exit_trap 'rm -rf "$EXTRA_VSIX_DIR"'
     for base in "${SPLIT_BASES[@]}"; do
         name="$(basename "$base")"
         devkit_verify_staged "$VSIX_DIR" "$name"      # fail-closed: aborts on mismatch
@@ -101,7 +104,7 @@ FAILED=()
 DECOMP_DIR=""
 
 _cleanup_decomp() { [[ -n "$DECOMP_DIR" ]] && rm -rf "$DECOMP_DIR"; }
-trap '_cleanup_decomp' EXIT
+devkit_add_exit_trap '_cleanup_decomp'
 
 for vsix in "${VSIX_FILES[@]}"; do
     name="$(basename "$vsix")"

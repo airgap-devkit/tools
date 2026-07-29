@@ -24,8 +24,25 @@ fi
 # the whole root on exit — covering install, Windows-installer, query-only and
 # failure paths alike — and devkit_install_archive frees each dir early (by path
 # prefix, no shared state needed) so a multi-tool install doesn't accumulate.
+# Composable EXIT-trap registry. A bare `trap '...' EXIT` in a setup.sh REPLACES
+# whatever handler is already installed — including the temp-root cleanup set
+# just below — so a caller that adds its own on-exit cleanup would silently
+# disarm ours and leak the whole /tmp root. Every handler (ours and each
+# setup.sh's) is registered here and run in order by a single EXIT trap.
+_DEVKIT_EXIT_CMDS=()
+_devkit_run_exit_traps() {
+    local _c
+    for _c in "${_DEVKIT_EXIT_CMDS[@]:-}"; do
+        [[ -n "$_c" ]] && eval "$_c" || true
+    done
+}
+# devkit_add_exit_trap CMD — register CMD to run on shell exit. setup.sh scripts
+# MUST use this instead of `trap '...' EXIT`, which would clobber the registry.
+devkit_add_exit_trap() { _DEVKIT_EXIT_CMDS+=("$1"); }
+trap '_devkit_run_exit_traps' EXIT
+
 _DEVKIT_TMPROOT="$(mktemp -d "${TMPDIR:-/tmp}/devkit.XXXXXX")"
-trap '[[ -n "${_DEVKIT_TMPROOT:-}" && "${_DEVKIT_TMPROOT}" == */devkit.* && -d "${_DEVKIT_TMPROOT}" ]] && rm -rf "${_DEVKIT_TMPROOT}"' EXIT
+devkit_add_exit_trap '[[ -n "${_DEVKIT_TMPROOT:-}" && "${_DEVKIT_TMPROOT}" == */devkit.* && -d "${_DEVKIT_TMPROOT}" ]] && rm -rf "${_DEVKIT_TMPROOT}"'
 _devkit_asm_tmpdir() { mktemp -d "${_DEVKIT_TMPROOT}/asm.XXXXXX"; }
 
 # ── glibc-aware Linux distro selection ──────────────────────────────────────
