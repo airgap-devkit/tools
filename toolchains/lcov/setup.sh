@@ -48,6 +48,9 @@ if command -v rpm &>/dev/null && [[ "$(id -u)" == "0" ]] && [[ -f "$RPM" ]]; the
 elif [[ -f "$SOURCE_ARCHIVE" ]]; then
     echo "    Installing from source archive..."
     TMP=$(mktemp -d)
+    # Cover every exit path (a failed `make install` aborts before the explicit
+    # rm below), and compose with the library's temp-root cleanup.
+    devkit_add_exit_trap 'rm -rf "$TMP"'
     devkit_extract "$SOURCE_ARCHIVE" "$TMP" 0
     # The archive may or may not carry a top-level lcov-<version>/ wrapper dir;
     # locate the Makefile root either way.
