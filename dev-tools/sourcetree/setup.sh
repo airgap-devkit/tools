@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="sourcetree"
-VERSION="3.4.31"
+VERSION="3.4.30"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
 
@@ -20,9 +20,11 @@ echo "==> Installing SourceTree ${VERSION} (Windows) ..."
 echo "    Note: SourceTree installs to %LocalAppData%\\SourceTree (Squirrel default)."
 
 PARTS_DIR="$PREBUILT_DIR/dev-tools/sourcetree/${VERSION}"
-INSTALLER=$(devkit_find_file "$PARTS_DIR")
-if [[ -z "$INSTALLER" ]]; then
-    echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
+# `if ! X=$(…)`, not a bare assignment: under set -e a bare
+# `INSTALLER=$(devkit_find_file …)` aborts on a non-zero resolve BEFORE the
+# `[[ -z ]]` check could print an actionable error.
+if ! INSTALLER=$(devkit_find_file "$PARTS_DIR"); then
+    echo "ERROR: no SourceTree installer resolved in $PARTS_DIR" >&2; exit 1
 fi
 
 devkit_install_exe_silent "$INSTALLER"

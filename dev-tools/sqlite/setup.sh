@@ -80,8 +80,9 @@ PREFIX="${INSTALL_PREFIX:-$DEFAULT_PREFIX}"
 while [[ $# -gt 0 ]]; do
     case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
 done
-ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")" \
-    || { echo "ERROR: Archive not found for ${ARCHIVE_BASE} in $PARTS_DIR" >&2; exit 1; }
+# _strict distinguishes a missing artifact (exit 1) from one that failed integrity
+# verification (exit 2) and prints the right message; set -e aborts on either.
+ARCHIVE_PATH="$(devkit_resolve_archive_strict "$PARTS_DIR" "$ARCHIVE_BASE")"
 
 echo "==> Installing SQLite CLI ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}/bin"
 

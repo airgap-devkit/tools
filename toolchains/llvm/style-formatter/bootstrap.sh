@@ -24,6 +24,28 @@ fi
 CLANG_FORMAT_VERSION=$(clang-format --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 echo "    clang-format version: ${CLANG_FORMAT_VERSION}"
 
+# Never install the hook / .clang-format into the devkit's OWN checkout. When the
+# CLI installer runs this, the git root IS the devkit repo, so we would otherwise
+# leave an untracked .clang-format and a pre-commit hook behind (git status dirty).
+# The formatter is meant for the USER's project — skip cleanly here, but still drop
+# a receipt so the tool is accounted for.
+if [[ -f "$TARGET_REPO/scripts/internal/install-cli.sh" && -f "$TARGET_REPO/tools/lib/devkit-install.sh" ]]; then
+    echo "    [--] Target is the airgap-devkit checkout itself — not installing the hook here." >&2
+    echo "         Re-run inside your own project's git repo to enable the clang-format pre-commit hook." >&2
+    _receipt_root="${INSTALL_PREFIX_OVERRIDE:-${HOME}/.local/share/airgap-cpp-devkit}"
+    _receipt_dir="${_receipt_root}/clang-style-formatter"
+    mkdir -p "$_receipt_dir" 2>/dev/null || true
+    cat > "$_receipt_dir/INSTALL_RECEIPT.txt" 2>/dev/null <<RECEIPT || true
+tool=clang-style-formatter
+version=${CLANG_FORMAT_VERSION}
+platform=both
+install_prefix=${_receipt_dir}
+installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+note=hook-skipped-in-devkit-checkout
+RECEIPT
+    exit 0
+fi
+
 if [[ ! -d "$HOOK_DIR" ]]; then
     # The pre-commit hook only makes sense inside a git working tree. When the
     # devkit is installed outside one (e.g. CI containers, fresh servers), skip

@@ -25,8 +25,9 @@ if [[ ! -d "$PARTS_DIR" ]]; then
     echo "ERROR: Prebuilt parts not found at: $PARTS_DIR" >&2; exit 1
 fi
 
-ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$ARCHIVE_BASE")" \
-    || { echo "ERROR: Archive not found for ${ARCHIVE_BASE} in $PARTS_DIR" >&2; exit 1; }
+# _strict distinguishes a missing artifact (exit 1) from one that failed integrity
+# verification (exit 2) and prints the right message; set -e aborts on either.
+ARCHIVE_PATH="$(devkit_resolve_archive_strict "$PARTS_DIR" "$ARCHIVE_BASE")"
 devkit_verify_archive "$PARTS_DIR/manifest.json" "$ARCHIVE_PATH"
 
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then

@@ -14,6 +14,20 @@ else
     DEVKIT_PLATFORM="linux"
 fi
 
+# ── Temp-dir cleanup for split-archive assembly ─────────────────────────────
+# Assembled split archives are written to a fresh temp dir (never back into the
+# read-only/prebuilt tree). Without cleanup a full LLVM or VS Code install leaks
+# hundreds of MB of /tmp per run — a real problem on air-gapped hosts with a
+# small or tmpfs /tmp. The resolvers run inside $() subshells, so a tracked-array
+# approach can't reach the parent; instead every assembled archive goes under a
+# single per-process root created HERE in the parent shell. An EXIT trap removes
+# the whole root on exit — covering install, Windows-installer, query-only and
+# failure paths alike — and devkit_install_archive frees each dir early (by path
+# prefix, no shared state needed) so a multi-tool install doesn't accumulate.
+_DEVKIT_TMPROOT="$(mktemp -d "${TMPDIR:-/tmp}/devkit.XXXXXX")"
+trap '[[ -n "${_DEVKIT_TMPROOT:-}" && "${_DEVKIT_TMPROOT}" == */devkit.* && -d "${_DEVKIT_TMPROOT}" ]] && rm -rf "${_DEVKIT_TMPROOT}"' EXIT
+_devkit_asm_tmpdir() { mktemp -d "${_DEVKIT_TMPROOT}/asm.XXXXXX"; }
+
 # ── glibc-aware Linux distro selection ──────────────────────────────────────
 # The devkit targets RHEL / Rocky 8, 9 and 10 (baseline: 9). Each major ships a
 # fixed glibc: 8 → 2.28, 9 → 2.34, 10 → 2.39. glibc is backward-compatible — a
@@ -129,11 +143,13 @@ devkit_linux_tag_fallbacks() {
 # than proceeding unverified.
 
 # devkit_verify_sha256 FILE EXPECTED_HEX
-# Aborts (exit 1) on mismatch or when no sha256 tool is available; returns 0 on
-# match. Verification is mandatory, so a host with no sha256 tool is a failure.
+# Aborts with EXIT CODE 2 (integrity failure) on mismatch, a missing file, or the
+# absence of a sha256 tool; returns 0 on match. Exit code 2 (vs 1 = artifact
+# absent) lets a resolver's caller distinguish "present but corrupt — abort" from
+# "not staged — try the next candidate". Verification is mandatory.
 devkit_verify_sha256() {
     local file="$1" expected="$2"
-    [[ -f "$file" ]] || { echo "ERROR: verify: file not found: $file" >&2; exit 1; }
+    [[ -f "$file" ]] || { echo "ERROR: verify: file not found: $file" >&2; exit 2; }
     local actual
     if command -v sha256sum &>/dev/null; then
         actual=$(sha256sum "$file" | awk '{print $1}')
@@ -141,13 +157,13 @@ devkit_verify_sha256() {
         actual=$(shasum -a 256 "$file" | awk '{print $1}')
     else
         echo "ERROR: verify: no sha256 tool (sha256sum/shasum) available; cannot confirm integrity of $(basename "$file")" >&2
-        exit 1
+        exit 2
     fi
     if [[ "${actual,,}" != "${expected,,}" ]]; then
         echo "ERROR: checksum mismatch for $(basename "$file")" >&2
         echo "       expected: ${expected}" >&2
         echo "       actual:   ${actual}" >&2
-        exit 1
+        exit 2
     fi
     echo "    [OK] sha256 verified: $(basename "$file")"
 }
@@ -194,9 +210,13 @@ devkit_manifest_part_sha256() {
 devkit_verify_staged() {
     local dir="$1" base="$2"
     local manifest="$dir/manifest.json"
+    # The artifact is present (the caller only reaches here for a staged file),
+    # so an unverifiable manifest/hash is an integrity failure (exit 2 → abort),
+    # never treated as "absent" (which would let a caller fall back to another
+    # candidate and install it — fail-open).
     if [[ ! -f "$manifest" ]]; then
         echo "ERROR: integrity: no manifest.json in ${dir}; refusing to install ${base} unverified" >&2
-        exit 1
+        exit 2
     fi
 
     # Split archive: verify each staged part before it is ever assembled.
@@ -208,12 +228,12 @@ devkit_verify_staged() {
             hash="$(devkit_manifest_part_sha256 "$manifest" "$pname")"
             if [[ -z "$hash" ]]; then
                 echo "ERROR: integrity: no part_sha256 for ${pname} in ${manifest}; refusing to install unverified" >&2
-                exit 1
+                exit 2
             fi
             devkit_verify_sha256 "$part" "$hash"
             verified=$((verified + 1))
         done
-        [[ "$verified" -gt 0 ]] || { echo "ERROR: integrity: no parts found for ${base} in ${dir}" >&2; exit 1; }
+        [[ "$verified" -gt 0 ]] || { echo "ERROR: integrity: no parts found for ${base} in ${dir}" >&2; exit 2; }
         return 0
     fi
 
@@ -221,7 +241,7 @@ devkit_verify_staged() {
     local expected; expected="$(devkit_manifest_sha256 "$manifest" "$base")"
     if [[ -z "$expected" ]]; then
         echo "ERROR: integrity: no sha256 for ${base} in ${manifest}; refusing to install unverified" >&2
-        exit 1
+        exit 2
     fi
     devkit_verify_sha256 "$dir/$base" "$expected"
 }
@@ -280,7 +300,7 @@ devkit_resolve_named() {
     local dir="$1" name="$2" out
     if ls "$dir/$name".part-aa &>/dev/null; then
         devkit_verify_staged "$dir" "$name" >&2      # hashes every part, fail-closed
-        out="$(mktemp -d)/$name"
+        out="$(_devkit_asm_tmpdir)/$name"
         if ! cat "$dir/$name".part-* > "$out" 2>/dev/null; then
             echo "ERROR: failed to reassemble ${name}." >&2
             return 1
@@ -324,7 +344,7 @@ devkit_assemble_parts() {
     # manifest, so the assembled bytes are exactly cat(verified parts). Reusing a
     # cached (or planted) whole file at "$stem" would hand the extractor a file
     # the integrity gate never checked, since the gate hashes the parts.
-    local target; target="$(mktemp -d)/$base"
+    local target; target="$(_devkit_asm_tmpdir)/$base"
 
     echo "==> Assembling split archive: ${base}..." >&2
     # Only cat the parts that belong to this specific base file. A failed write
@@ -363,6 +383,26 @@ devkit_resolve_archive() {
     return 1
 }
 
+# devkit_resolve_archive_strict DIR BASE_NO_EXT
+# Like devkit_resolve_archive, but on failure prints a PRECISE error — telling a
+# missing artifact (exit 1) apart from one that failed integrity verification
+# (exit 2) — and propagates the code. Callers use this so a checksum mismatch is
+# never mis-reported as "archive not found" and never falls through silently.
+devkit_resolve_archive_strict() {
+    local dir="$1" base="$2" path rc
+    if path="$(devkit_resolve_archive "$dir" "$base")"; then
+        printf '%s' "$path"; return 0
+    else
+        rc=$?
+        if [[ "$rc" -eq 2 ]]; then
+            echo "ERROR: integrity verification failed for ${base} in ${dir} — refusing to install." >&2
+        else
+            echo "ERROR: archive not found for ${base} in ${dir}." >&2
+        fi
+        return "$rc"
+    fi
+}
+
 # ── File discovery ──────────────────────────────────────────────────────────
 # devkit_find_file DIR [PLATFORM]
 # Returns the installer file for PLATFORM in DIR.
@@ -393,6 +433,15 @@ devkit_find_file() {
             echo "$resolved"; return 0
         fi
         echo "ERROR: manifest names '${mname}' for ${plat}, but it is missing or failed verification in ${dir}" >&2
+        return 1
+    fi
+
+    # If the manifest DECLARES a per-platform map but has no entry for this
+    # platform, refuse — do NOT fall through to the filename guess, which would
+    # happily hand back another platform's artifact (e.g. a Windows .exe for a
+    # linux request).
+    if grep -qE '"platforms"[[:space:]]*:' "$dir/manifest.json" 2>/dev/null; then
+        echo "ERROR: ${dir} declares per-platform artifacts but none for '${plat}' — not available on this platform." >&2
         return 1
     fi
 
@@ -455,7 +504,9 @@ devkit_install_exe() {
     cmd.exe //c "\"${exe_w}\" ${flags}"
     local rc=$?
     set -e
-    [[ $rc -ne 0 ]] && { echo "ERROR: Installer failed (exit $rc)" >&2; exit 1; }
+    # `[[ … ]] && { … }` as the LAST statement would make the function return 1 on
+    # success (rc=0 → test false → AND-list false). Use if/then so success returns 0.
+    if [[ $rc -ne 0 ]]; then echo "ERROR: Installer failed (exit $rc)" >&2; exit 1; fi
 }
 
 # devkit_install_exe_silent POSIX_PATH
@@ -469,7 +520,7 @@ devkit_install_exe_silent() {
     cmd.exe //c "\"${exe_w}\" --silent"
     local rc=$?
     set -e
-    [[ $rc -ne 0 ]] && { echo "ERROR: Installer failed (exit $rc)" >&2; exit 1; }
+    if [[ $rc -ne 0 ]]; then echo "ERROR: Installer failed (exit $rc)" >&2; exit 1; fi
 }
 
 # devkit_install_nsis_s POSIX_PATH PREFIX
@@ -484,7 +535,7 @@ devkit_install_nsis_s() {
     cmd.exe //c "\"${exe_w}\" /S /D=\"${prefix_w}\""
     local rc=$?
     set -e
-    [[ $rc -ne 0 ]] && { echo "ERROR: Installer failed (exit $rc)" >&2; exit 1; }
+    if [[ $rc -ne 0 ]]; then echo "ERROR: Installer failed (exit $rc)" >&2; exit 1; fi
 }
 
 # ── MSI installer ───────────────────────────────────────────────────────────
@@ -541,7 +592,9 @@ devkit_install_msi() {
         echo "ERROR: msiexec failed (exit $rc)" >&2; exit 1
     fi
     rm -f "$log_p"
-    [[ $rc -eq 3010 ]] && echo "==> Note: A system restart may be required."
+    # if/then (not `[[ … ]] && …`): as the last statement the AND-form would make
+    # the function return 1 whenever rc != 3010 (i.e. on a normal success).
+    if [[ $rc -eq 3010 ]]; then echo "==> Note: A system restart may be required."; fi
 }
 
 # ── Archive extraction ──────────────────────────────────────────────────────
@@ -618,6 +671,12 @@ devkit_install_archive() {
         done
     )
     rm -rf "$tmp"
+    # If ARCHIVE was assembled under our per-process temp root, drop its dir now
+    # that it has been extracted — don't wait for the EXIT trap, so a multi-tool
+    # install doesn't accumulate hundreds of MB of assembled archives in /tmp.
+    case "$archive" in
+        "${_DEVKIT_TMPROOT:-/nonexistent}"/*) rm -rf "$(dirname "$archive")" ;;
+    esac
 }
 
 # ── Package manager installers ──────────────────────────────────────────────

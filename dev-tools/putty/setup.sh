@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="putty"
-VERSION="0.84"
+VERSION="0.83"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
@@ -16,9 +16,10 @@ echo "==> Installing PuTTY ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}"
 
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     PARTS_DIR="$PREBUILT_DIR/dev-tools/putty/${VERSION}"
-    INSTALLER=$(devkit_find_file "$PARTS_DIR")
-    if [[ -z "$INSTALLER" ]]; then
-        echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
+    # `if ! X=$(…)`: under set -e a bare assignment aborts on a non-zero resolve
+    # before the diagnostic below can run.
+    if ! INSTALLER=$(devkit_find_file "$PARTS_DIR"); then
+        echo "ERROR: no PuTTY installer resolved in $PARTS_DIR" >&2; exit 1
     fi
     devkit_install_msi "$INSTALLER"
 else

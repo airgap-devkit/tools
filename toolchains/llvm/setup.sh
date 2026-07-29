@@ -44,8 +44,18 @@ ARCHIVE_PATH=""
 for _base in "${ARCHIVE_BASES[@]}"; do
     if ARCHIVE_PATH="$(devkit_resolve_archive "$PARTS_DIR" "$_base")"; then
         ARCHIVE_BASE="$_base"; break
+    else
+        # Distinguish "absent" (exit 1 → try the next distro tag) from
+        # "present but failed integrity verification" (exit 2 → STOP). Falling
+        # through on a checksum failure would silently install a different tag —
+        # fail-open. Abort hard instead.
+        _rc=$?
+        if [[ "$_rc" -eq 2 ]]; then
+            echo "ERROR: integrity verification failed for ${_base} in ${PARTS_DIR} — refusing to fall back to another build." >&2
+            exit 1
+        fi
+        ARCHIVE_PATH=""
     fi
-    ARCHIVE_PATH=""
 done
 if [[ -z "$ARCHIVE_PATH" ]]; then
     echo "ERROR: No LLVM archive found (${ARCHIVE_BASES[*]}) in $PARTS_DIR" >&2

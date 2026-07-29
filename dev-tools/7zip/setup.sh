@@ -14,9 +14,10 @@ devkit_parse_args "$@"
 echo "==> Installing 7-Zip ${VERSION} (${DEVKIT_PLATFORM}) to ${PREFIX}"
 
 PARTS_DIR="$PREBUILT_DIR/dev-tools/7zip/${VERSION}"
-INSTALLER=$(devkit_find_file "$PARTS_DIR")
-if [[ -z "$INSTALLER" ]]; then
-    echo "ERROR: No installer found in $PARTS_DIR" >&2; exit 1
+# `if ! X=$(…)`: under set -e a bare assignment aborts on a non-zero resolve
+# before the diagnostic below can run.
+if ! INSTALLER=$(devkit_find_file "$PARTS_DIR"); then
+    echo "ERROR: no 7-Zip installer resolved in $PARTS_DIR" >&2; exit 1
 fi
 
 if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
