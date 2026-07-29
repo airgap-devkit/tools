@@ -26,7 +26,9 @@ if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
     fi
 
     TMP_EXTRACT=$(mktemp -d)
-    trap 'rm -rf "$TMP_EXTRACT"' EXIT
+    # Register via the lib helper, not a bare EXIT handler, so it composes with
+    # the library's temp-root cleanup instead of replacing it.
+    devkit_add_exit_trap 'rm -rf "$TMP_EXTRACT"'
 
     devkit_extract "$ARCHIVE" "$TMP_EXTRACT"
 
@@ -83,7 +85,9 @@ else
         fi
 
         BUILD_DIR=$(mktemp -d)
-        trap 'rm -rf "$BUILD_DIR"' EXIT
+        # Register via the lib helper, not a bare EXIT handler, so it composes
+        # with the library's temp-root cleanup instead of replacing it.
+        devkit_add_exit_trap 'rm -rf "$BUILD_DIR"'
 
         echo "==> Extracting source..."
         tar -xzf "$SOURCE_ARCHIVE" -C "$BUILD_DIR"

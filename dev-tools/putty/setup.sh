@@ -41,7 +41,9 @@ else
     fi
 
     BUILD_DIR=$(mktemp -d)
-    trap 'rm -rf "$BUILD_DIR"' EXIT
+    # Register via the lib helper, not a bare EXIT handler: the latter would
+    # replace the library's temp-root cleanup and leak it.
+    devkit_add_exit_trap 'rm -rf "$BUILD_DIR"'
 
     echo "==> Extracting source..."
     tar -xzf "$SOURCE_ARCHIVE" -C "$BUILD_DIR"
