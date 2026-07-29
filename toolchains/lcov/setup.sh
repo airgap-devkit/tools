@@ -90,11 +90,46 @@ _verify_genhtml() {
         return 0
     fi
     echo "  [!!] lcov installed, but genhtml cannot run — its HTML-report step is unavailable." >&2
-    local mods
-    mods="$(printf '%s\n' "$out" \
-        | grep -oE "Can't locate [A-Za-z0-9_/]+\.pm" \
-        | sed "s#Can't locate ##; s#/#::#g; s#\.pm##" \
-        | sort -u | paste -sd', ' - || true)"
+
+    # genhtml aborts at the FIRST unresolved `use`, so the compile error names only
+    # one module even when several are absent — which turns "which modules do I need
+    # to stage?" into one install attempt per module. Enumerate every module the
+    # genhtml path loads (genhtml itself + the lcov perl libs) and probe each under
+    # the same PERL5LIB, so the full missing set is reported in a single run.
+    local mods="" perl_bin
+    perl_bin="$(command -v perl 2>/dev/null || true)"
+    if [[ -n "$perl_bin" ]]; then
+        local missing=() m pm
+        while IFS= read -r m; do
+            [[ -z "$m" ]] && continue
+            case "$m" in
+                strict|warnings|constant|lib|vars|utf8|feature|overload|parent|base|integer|POSIX|Exporter|Carp|Cwd) continue ;;
+            esac
+            # Skip lcov's own modules (present on disk): a load failure there is a
+            # cascade from a genuinely-missing dependency, which is reported itself.
+            pm="${m//:://}.pm"
+            [[ -e "$PREFIX/lib/$pm" || -e "$PREFIX/lib/lcov/$pm" ]] && continue
+            PERL5LIB="${plib}${PERL5LIB:+:$PERL5LIB}" "$perl_bin" -M"$m" -e1 >/dev/null 2>&1 \
+                || missing+=("$m")
+        done < <(
+            # Scan genhtml + the top-level lcov libs only (not the vendored subdir,
+            # whose POD prose contains "use ..." examples). Require a real `use X;`
+            # statement terminated by a semicolon so POD lines don't false-match.
+            { printf '%s\n' "$gh"; find "$PREFIX/lib" -maxdepth 1 -name '*.pm' 2>/dev/null; } \
+            | xargs grep -hE '^[[:space:]]*use[[:space:]]+[A-Za-z][A-Za-z0-9_:]+.*;' 2>/dev/null \
+            | sed -E 's/^[[:space:]]*use[[:space:]]+([A-Za-z][A-Za-z0-9_:]+).*/\1/' \
+            | sort -u
+        )
+        [[ ${#missing[@]} -gt 0 ]] && mods="$(printf '%s\n' "${missing[@]}" | paste -sd', ' -)"
+    fi
+    # Fallback when perl probing isn't possible: name the one module the compile
+    # error surfaced.
+    if [[ -z "$mods" ]]; then
+        mods="$(printf '%s\n' "$out" \
+            | grep -oE "Can't locate [A-Za-z0-9_/]+\.pm" \
+            | sed "s#Can't locate ##; s#/#::#g; s#\.pm##" \
+            | sort -u | paste -sd', ' - || true)"
+    fi
     [[ -n "$mods" ]] && echo "       Missing Perl modules: ${mods}" >&2
     echo "       Coverage capture (lcov) still works; only genhtml HTML output is affected." >&2
     echo "       Stage these modules into the perl-vendor-lcov prebuilt archive to enable it." >&2
