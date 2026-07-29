@@ -64,7 +64,11 @@ elif [[ -f "$SOURCE_ARCHIVE" ]]; then
       for _f in "$SRC"/**/*.pl "$SRC"/**/*.sh "$SRC"/bin/* "$SRC"/**/bin/*; do
           [[ -f "$_f" ]] && chmod +x "$_f" 2>/dev/null || true
       done )
-    make -C "$SRC" install PREFIX="$PREFIX"
+    # lcov 2.5's Makefile does `TMP_DIR := $(shell mktemp -d)` at parse time and
+    # never removes it. Point TMPDIR at our own $TMP so that grandchild mktemp
+    # lands inside a dir we (and the exit-trap registry) already clean, instead of
+    # leaking a sibling /tmp/tmp.* that this script never learns the name of.
+    TMPDIR="$TMP" make -C "$SRC" install PREFIX="$PREFIX"
     rm -rf "$TMP"
     _install_perl_vendor "$PREFIX/lib/lcov"
 else
