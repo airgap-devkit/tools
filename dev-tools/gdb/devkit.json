@@ -1,10 +1,10 @@
 {
   "id": "gdb",
   "name": "GDB",
-  "version": "17.1",
+  "version": "17.2",
   "category": "Developer Tools",
   "platform": "linux",
-  "description": "GNU Project Debugger — source-level debugger for C, C++, and other languages. Built from source on Linux.",
+  "description": "GNU Project Debugger \u00e2\u20ac\u201d source-level debugger for C, C++, and other languages. Built from source on Linux.",
   "setup": "setup.sh",
   "receipt_name": "gdb",
   "estimate": "~25 min",
@@ -13,6 +13,8 @@
   "source": "default",
   "check_cmd": "gdb --version 2>&1",
   "check_binary": "gdb",
-  "check_args": ["--version"],
+  "check_args": [
+    "--version"
+  ],
   "check_url": "https://sourceware.org/gdb/download/"
 }

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="gdb"
-VERSION="17.1"
+VERSION="17.2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 
