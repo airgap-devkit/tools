@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="dotnet"
-VERSION="10.0.301"
+VERSION="10.0.302"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
