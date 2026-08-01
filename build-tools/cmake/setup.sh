@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="cmake"
-VERSION="4.3.3"
+VERSION="4.4.2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../lib/devkit-install.sh"
 PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"

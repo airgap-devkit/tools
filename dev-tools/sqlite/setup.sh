@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="sqlite"
-VERSION="3.53.3"
+VERSION="3.53.4"
 # RHEL/Rocky vendored RPMs ship an older, distro-native SQLite than the upstream
 # CLI-tools tarball; one RPM per major is staged (el8/el9/el10) and the installed
 # version is read from the file name so the receipt reflects what actually landed.
