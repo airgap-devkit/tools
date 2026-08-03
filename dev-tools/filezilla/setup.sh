@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="filezilla"
-VERSION="3.70.4"
+VERSION="3.70.6"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"

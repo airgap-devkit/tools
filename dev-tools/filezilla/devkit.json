@@ -1,7 +1,7 @@
 {
   "id": "filezilla",
   "name": "FileZilla",
-  "version": "3.70.4",
+  "version": "3.70.6",
   "category": "Developer Tools",
   "platform": "both",
   "description": "Cross-platform FTP, FTPS, and SFTP client for transferring files to/from remote servers.",
