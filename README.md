@@ -102,7 +102,7 @@ airgap-devkit-tools/
   frameworks/
     grpc/               devkit.json  (gRPC 1.83.0, Win v142/v143/v145 x Release/Debug + Linux RHEL/Rocky 8/9/10)
   dev-tools/
-    servy/              devkit.json  (Servy 7.9)
+    servy/              devkit.json  (Servy 9.4)
     conan/              devkit.json  (Conan 2.27.1)
     vscode-extensions/  devkit.json  (VS Code Extensions)
     sqlite/             devkit.json  (SQLite CLI)

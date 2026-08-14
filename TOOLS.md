@@ -51,7 +51,7 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
+| **Servy** | 9.4 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
 | **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
 | **VS Code Extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.3 (Win/modern Linux) / distro-native RPM (RHEL/Rocky 8/9/10) | Windows + Linux | Yes | `dev-tools/sqlite/` |

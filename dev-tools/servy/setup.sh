@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TOOL="servy"
-VERSION="9.0"
+VERSION="9.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../lib/devkit-install.sh"
 
