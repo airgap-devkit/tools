@@ -78,20 +78,29 @@ fi
 
 # ---------------------------------------------------------------------------
 # Shared helper: verify every part of <platform_key> in <manifest> against its
-# recorded SHA256. Returns non-zero on any missing/mismatched part. Best-effort:
-# a manifest without part_sha256 for the key is treated as "nothing to verify".
+# recorded SHA256. Returns non-zero when the manifest, python3, or the per-part
+# checksums are absent, so a prebuilt archive is never unpacked without a
+# matching recorded checksum.
 # ---------------------------------------------------------------------------
 _grpc_verify_parts() {
     local manifest="$1" pdir="$2" platform_key="$3"
-    [[ -f "${manifest}" ]] || return 0
-    command -v python3 &>/dev/null || return 0
+    if [[ ! -f "${manifest}" ]]; then
+        echo "  integrity: manifest not found: ${manifest}" >&2
+        return 2
+    fi
+    if ! command -v python3 &>/dev/null; then
+        echo "  integrity: python3 is required to verify prebuilt checksums" >&2
+        return 2
+    fi
     python3 - "${manifest}" "${pdir}" "${platform_key}" <<'PY'
 import hashlib, json, os, sys
 manifest, pdir, key = sys.argv[1], sys.argv[2], sys.argv[3]
 d = json.load(open(manifest))
 pv = d.get("platforms", {}).get(key)
 if not pv or not pv.get("part_sha256"):
-    sys.exit(0)  # nothing to verify -> not fatal
+    print(f"no part_sha256 recorded for {key}; refusing to install unverified",
+          file=sys.stderr)
+    sys.exit(4)
 def sha(p):
     h = hashlib.sha256()
     with open(p, "rb") as f:
@@ -149,15 +158,13 @@ if [[ "${PLATFORM}" == "linux" ]]; then
     fi
 
     MANIFEST="${PREBUILT_DIR}/manifest.json"
-    if command -v sha256sum &>/dev/null; then
-        im_progress_start "Verifying package integrity"
-        if ! _grpc_verify_parts "${MANIFEST}" "${PREBUILT_DIR}" "${PLATFORM_KEY}"; then
-            im_progress_stop "Integrity check FAILED"
-            echo "  [!!] Prebuilt parts failed checksum verification. Aborting." >&2
-            exit 1
-        fi
-        im_progress_stop "Integrity verified"
+    im_progress_start "Verifying package integrity"
+    if ! _grpc_verify_parts "${MANIFEST}" "${PREBUILT_DIR}" "${PLATFORM_KEY}"; then
+        im_progress_stop "Integrity check FAILED"
+        echo "  [!!] Prebuilt parts failed checksum verification. Aborting." >&2
+        exit 1
     fi
+    im_progress_stop "Integrity verified"
 
     mkdir -p "${INSTALL_PREFIX}"
     TMP_ARCHIVE="${INSTALL_PREFIX}/.${ARCHIVE_NAME}"
@@ -284,18 +291,16 @@ if ! ls "${PREBUILT_DIR}/${ARCHIVE_NAME}".part-* &>/dev/null \
 fi
 
 # ---------------------------------------------------------------------------
-# Best-effort part integrity check against manifest.json
+# Fail-closed part integrity check against manifest.json
 # ---------------------------------------------------------------------------
 MANIFEST="${PREBUILT_DIR}/manifest.json"
-if [[ -f "${MANIFEST}" ]] && command -v python3 &>/dev/null && command -v sha256sum &>/dev/null; then
-    im_progress_start "Verifying package integrity"
-    if ! _grpc_verify_parts "${MANIFEST}" "${PREBUILT_DIR}" "${PLATFORM_KEY}"; then
-        im_progress_stop "Integrity check FAILED"
-        echo "  [!!] Prebuilt parts failed checksum verification. Aborting." >&2
-        exit 1
-    fi
-    im_progress_stop "Integrity verified"
+im_progress_start "Verifying package integrity"
+if ! _grpc_verify_parts "${MANIFEST}" "${PREBUILT_DIR}" "${PLATFORM_KEY}"; then
+    im_progress_stop "Integrity check FAILED"
+    echo "  [!!] Prebuilt parts failed checksum verification. Aborting." >&2
+    exit 1
 fi
+im_progress_stop "Integrity verified"
 
 # ---------------------------------------------------------------------------
 # Reassemble parts into a temporary archive (do NOT pollute the submodule)
