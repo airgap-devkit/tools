@@ -89,7 +89,7 @@ airgap-devkit-tools/
       source-build/     devkit.json  (Clang / LLVM 22.1.3)
       style-formatter/  devkit.json  (LLVM Style Formatter)
     gcc/
-      windows/          devkit.json  (GCC + MinGW-w64 15.2.0)
+      windows/          devkit.json  (GCC + MinGW-w64 16.2.0)
       linux/
         native/         devkit.json  (GCC Native, RHEL/Rocky 8, 9, 10)
         cross/          devkit.json  (GCC Cross x86_64-bionic)
@@ -102,7 +102,7 @@ airgap-devkit-tools/
   frameworks/
     grpc/               devkit.json  (gRPC 1.83.0, Win v142/v143/v145 x Release/Debug + Linux RHEL/Rocky 8/9/10)
   dev-tools/
-    servy/              devkit.json  (Servy 9.4)
+    servy/              devkit.json  (Servy 9.7)
     conan/              devkit.json  (Conan 2.27.1)
     vscode-extensions/  devkit.json  (VS Code Extensions)
     sqlite/             devkit.json  (SQLite CLI)

@@ -1,10 +1,10 @@
 {
   "id": "gcc",
   "name": "GCC",
-  "version": "16.1.0",
+  "version": "16.2.0",
   "category": "Toolchains",
   "platform": "both",
-  "description": "GNU Compiler Collection. Windows: WinLibs GCC 16.1.0 MinGW-w64 UCRT. Linux: gcc-toolset-15 RPMs for RHEL 8 \u2014 ships gcc 16.1.0 (includes gcov, gdb).",
+  "description": "GNU Compiler Collection. Windows: WinLibs GCC 16.2.0 MinGW-w64 UCRT. Linux: gcc-toolset-15 RPMs for RHEL 8 \u2014 ships gcc 16.1.0 (includes gcov, gdb).",
   "setup": "setup.sh",
   "receipt_name": "gcc",
   "estimate": "~3 min",

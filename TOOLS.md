@@ -15,7 +15,7 @@ All tools target air-gapped environments — no internet access required at inst
 |------|---------|----------|-----------|----------|
 | **Clang / LLVM (source build)** | 22.1.3 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
 | **LLVM Style Formatter** | 22.1.3 | Windows + Linux | Yes | `toolchains/clang/style-formatter/` |
-| **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `toolchains/gcc/windows/` |
+| **GCC + MinGW-w64** | 16.2.0 + 14.0.0 UCRT | Windows | Yes | `toolchains/gcc/windows/` |
 | **GCC Native (RHEL/Rocky 8, 9, 10)** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `toolchains/gcc/linux/native/` |
 | **GCC Cross (x86_64-bionic)** | 15 | Linux | Yes | `toolchains/gcc/linux/cross/` |
 
@@ -51,7 +51,7 @@ All tools target air-gapped environments — no internet access required at inst
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **Servy** | 9.4 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
+| **Servy** | 9.7 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
 | **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
 | **VS Code Extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.3 (Win/modern Linux) / distro-native RPM (RHEL/Rocky 8/9/10) | Windows + Linux | Yes | `dev-tools/sqlite/` |
@@ -74,7 +74,7 @@ All tools target air-gapped environments — no internet access required at inst
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
 | gRPC 1.83.0 | Yes | Yes | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug. Linux: RHEL/Rocky 8/9/10 x86_64 static-runtime |
-| Servy 7.9 | Yes | — | Windows only, graceful no-op on Linux |
+| Servy 9.7 | Yes | — | Windows only, graceful no-op on Linux |
 | Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code Extensions | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI | Yes (3.53.3) | Yes (distro-native RPM) | RHEL/Rocky 8, 9, 10 each use the distro-native system RPM |
