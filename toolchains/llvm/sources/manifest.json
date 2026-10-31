@@ -1,0 +1,19 @@
+{
+  "tool": "llvm-sources",
+  "version": "vendored",
+  "note": "Upstream source archives for from-source builds (build.sh). Externalized via Option B; rehydrate with fetch-artifacts.sh.",
+  "files": {
+    "llvm-project-22.1.3.src.tar.xz.part-aa": {
+      "sha256": "626a7dbdd0a1dd9289f2f6a9262834615bc7abda1cc15e109377f3bb2ea12d86"
+    },
+    "llvm-project-22.1.3.src.tar.xz.part-ab": {
+      "sha256": "9b7741bdb104ea6118d7497f1f75ef1367cfa8f4e166908cdc492931bc4c3a2f"
+    },
+    "llvm-project-22.1.3.src.tar.xz.part-ac": {
+      "sha256": "4ccba430680284d8b147da013ae4c987632a51b0795bc669a27b4bca63b9b207"
+    },
+    "llvm-project-22.1.3.src.tar.xz.part-ad": {
+      "sha256": "9305976a0029cdc0d909ac0e45fcbd24dffd8586da0d58aa4f627622de5c937d"
+    }
+  }
+}

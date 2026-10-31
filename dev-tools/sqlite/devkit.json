@@ -1,0 +1,20 @@
+{
+  "id": "sqlite",
+  "name": "SQLite CLI",
+  "version": "3.53.4",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Serverless SQL database engine with a command-line interface. Windows and modern Linux: sqlite-tools 3.53.3. RHEL/Rocky 8, 9 and 10: uses the distro-native system RPM for the host major (el8/el9/el10).",
+  "setup": "setup.sh",
+  "receipt_name": "sqlite",
+  "estimate": "~15s",
+  "uses_prebuilt": true,
+  "sort_order": 54,
+  "source": "default",
+  "check_cmd": "sqlite3 --version",
+  "check_binary": "sqlite3",
+  "check_args": [
+    "--version"
+  ],
+  "check_url": "https://www.sqlite.org/download.html"
+}

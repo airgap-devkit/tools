@@ -1,0 +1,10 @@
+{
+  "tool": "osslsigncode-sources",
+  "version": "vendored",
+  "note": "Upstream source archives for from-source builds (build.sh). Externalized via Option B; rehydrate with fetch-artifacts.sh.",
+  "files": {
+    "osslsigncode-2.14.tar.gz": {
+      "sha256": "0f033fd6069387d2e489fbd2187e62f624764eb8c2758ee94e3e793e5150b5c5"
+    }
+  }
+}

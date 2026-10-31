@@ -1,0 +1,12 @@
+# ── Option B: upstream source archives live in release artifacts, not git ─────
+# build.sh scripts build these tools from source on a build host. The archives
+# are published as release assets and rehydrated via
+# scripts/internal/fetch-artifacts.sh (--manifests tools). Only the per-source
+# manifest.json (SHA256) is tracked here; the archives themselves are ignored so
+# they are never re-committed into the submodule.
+**/sources/*.tar.gz
+**/sources/*.tar.xz
+**/sources/*.tgz
+**/sources/*.7z
+**/sources/*.zip
+**/sources/*.part-*

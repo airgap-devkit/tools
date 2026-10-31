@@ -1,0 +1,23 @@
+{
+  "id": "osslsigncode",
+  "name": "osslsigncode",
+  "version": "2.14",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Cross-platform Authenticode code-signing for Windows PE binaries (.exe/.dll) using PKCS#12 certificates \u00e2\u20ac\u201d no Windows SDK required. Linux: source build.",
+  "setup": "setup.sh",
+  "receipt_name": "osslsigncode",
+  "estimate": "~5s (Windows) / ~3 min (Linux source build)",
+  "uses_prebuilt": true,
+  "sort_order": 60,
+  "source": "default",
+  "check_cmd": "osslsigncode --version 2>&1",
+  "check_binary": "osslsigncode",
+  "check_args": [
+    "--version"
+  ],
+  "github_repo": "mtrojnar/osslsigncode",
+  "tag_prefix": "",
+  "asset_match": "windows-x64-mingw.zip",
+  "asset_match_linux": ".tar.gz"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "servy",
+  "name": "Servy",
+  "version": "9.9",
+  "category": "Developer Tools",
+  "platform": "windows",
+  "description": "Lightweight Windows service manager for installing and supervising background processes.",
+  "setup": "setup.sh",
+  "receipt_name": "servy",
+  "estimate": "~15s",
+  "uses_prebuilt": true,
+  "sort_order": 51,
+  "source": "default",
+  "check_cmd": "Servy --version",
+  "github_repo": "aelassas/servy",
+  "asset_match": "x64-installer.exe",
+  "asset_exclude": "net48"
+}

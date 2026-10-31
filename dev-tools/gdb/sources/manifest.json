@@ -1,0 +1,10 @@
+{
+  "tool": "gdb-sources",
+  "version": "vendored",
+  "note": "Upstream source archives for from-source builds (build.sh). Externalized via Option B; rehydrate with fetch-artifacts.sh.",
+  "files": {
+    "gdb-17.2.tar.gz": {
+      "sha256": "cb891b9a9f554cac972eea5368176b240640ae90b681aae84bf873a9501f0063"
+    }
+  }
+}

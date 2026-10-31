@@ -1,0 +1,10 @@
+{
+  "tool": "lcov-sources",
+  "version": "vendored",
+  "note": "Upstream source archives for from-source builds (build.sh). Externalized via Option B; rehydrate with fetch-artifacts.sh.",
+  "files": {
+    "lcov-2.5.tar.xz": {
+      "sha256": "4a95037c7e361d0779e6e7e0bf6a8bb2ff51327cabb501d55912f782b5494006"
+    }
+  }
+}

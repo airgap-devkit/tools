@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Report the exact failing command/line if this script aborts (diagnostic).
+trap 'rc=$?; echo "ERROR: lcov/setup.sh aborted at line ${LINENO} (exit ${rc}): ${BASH_COMMAND}" >&2' ERR
+
+TOOL="lcov"
+VERSION="2.5"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../lib/devkit-install.sh"
+PREBUILT_DIR="${PREBUILT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)/prebuilt}"
+SOURCES_DIR="$SCRIPT_DIR/sources"
+
+# lcov is Linux-only
+if [[ "$DEVKIT_PLATFORM" == "windows" ]]; then
+    echo "lcov is a Linux-only tool. Skipping on Windows." >&2
+    exit 0
+fi
+
+PREFIX="${INSTALL_PREFIX:-$(devkit_default_prefix "$TOOL")}"
+while [[ $# -gt 0 ]]; do
+    case "$1" in --prefix) PREFIX="$2"; shift 2 ;; *) shift ;; esac
+done
+
+LCOV_DIR="$PREBUILT_DIR/toolchains/lcov/${VERSION}"
+RPM="$LCOV_DIR/lcov-${VERSION}-0.noarch.rpm"
+SOURCE_ARCHIVE="$(devkit_resolve_archive "$LCOV_DIR" "lcov-${VERSION}" 2>/dev/null || true)"
+PERL_VENDOR="$(devkit_resolve_archive "$LCOV_DIR" "perl-vendor-lcov" 2>/dev/null || true)"
+
+# Install Capture::Tiny (and any other vendored Perl deps) into the lcov lib dir.
+# lcov's own fix.pl rewrites 'use lib' to an absolute path at install time.
+# We mirror that: source installs use $PREFIX/lib/lcov; RPM installs use /usr/lib/lcov.
+_install_perl_vendor() {
+    local lib_dir="$1"
+    if [[ -f "$PERL_VENDOR" ]]; then
+        echo "    Vendoring Perl dependencies into ${lib_dir}..."
+        mkdir -p "$lib_dir"
+        devkit_extract "$PERL_VENDOR" "$lib_dir" 0
+    fi
+}
+
+echo "==> Installing lcov ${VERSION}"
+
+# Prefer RPM install if rpm is available (RHEL 8/9)
+if command -v rpm &>/dev/null && [[ "$(id -u)" == "0" ]] && [[ -f "$RPM" ]]; then
+    echo "    Installing via RPM..."
+    rpm -ivh "$RPM"
+    _install_perl_vendor "/usr/lib/lcov"
+elif [[ -f "$SOURCE_ARCHIVE" ]]; then
+    echo "    Installing from source archive..."
+    TMP=$(mktemp -d)
+    # Cover every exit path (a failed `make install` aborts before the explicit
+    # rm below), and compose with the library's temp-root cleanup.
+    devkit_add_exit_trap 'rm -rf "$TMP"'
+    devkit_extract "$SOURCE_ARCHIVE" "$TMP" 0
+    # The archive may or may not carry a top-level lcov-<version>/ wrapper dir;
+    # locate the Makefile root either way.
+    SRC="$TMP/lcov-${VERSION}"
+    [[ -f "$SRC/Makefile" ]] || SRC="$TMP"
+    # A .zip source archive does not preserve the execute bit, so the helper
+    # scripts that `make install` invokes come out non-executable (make would
+    # otherwise fail with exit 126). Restore it before installing. Use a bash
+    # glob rather than `find` so the install works on hosts without findutils.
+    ( shopt -s globstar nullglob
+      for _f in "$SRC"/**/*.pl "$SRC"/**/*.sh "$SRC"/bin/* "$SRC"/**/bin/*; do
+          [[ -f "$_f" ]] && chmod +x "$_f" 2>/dev/null || true
+      done )
+    # lcov 2.5's Makefile does `TMP_DIR := $(shell mktemp -d)` at parse time and
+    # never removes it. Point TMPDIR at our own $TMP so that grandchild mktemp
+    # lands inside a dir we (and the exit-trap registry) already clean, instead of
+    # leaking a sibling /tmp/tmp.* that this script never learns the name of.
+    TMPDIR="$TMP" make -C "$SRC" install PREFIX="$PREFIX"
+    rm -rf "$TMP"
+    _install_perl_vendor "$PREFIX/lib/lcov"
+else
+    echo "ERROR: Neither RPM nor source archive found for lcov ${VERSION}" >&2
+    exit 1
+fi
+
+# lcov (coverage capture) runs on core Perl, but genhtml's HTML-report step needs
+# extra Perl modules (DateTime, Date::Parse, Capture::Tiny, ...) that ship in the
+# perl-vendor-lcov archive. If they aren't resolvable, say so plainly rather than
+# reporting a clean success that hides a genhtml which cannot run.
+_verify_genhtml() {
+    local gh="$PREFIX/bin/genhtml"
+    [[ -x "$gh" ]] || gh="$(command -v genhtml 2>/dev/null || true)"
+    [[ -n "$gh" && -x "$gh" ]] || return 0
+    local plib="$PREFIX/lib/lcov:$PREFIX/lib:/usr/lib/lcov"
+    local out
+    if out="$(PERL5LIB="${plib}${PERL5LIB:+:$PERL5LIB}" "$gh" --version 2>&1)"; then
+        return 0
+    fi
+    echo "  [!!] lcov installed, but genhtml cannot run — its HTML-report step is unavailable." >&2
+
+    # genhtml aborts at the FIRST unresolved `use`, so the compile error names only
+    # one module even when several are absent — which turns "which modules do I need
+    # to stage?" into one install attempt per module. Enumerate every module the
+    # genhtml path loads (genhtml itself + the lcov perl libs) and probe each under
+    # the same PERL5LIB, so the full missing set is reported in a single run.
+    local mods="" perl_bin
+    perl_bin="$(command -v perl 2>/dev/null || true)"
+    if [[ -n "$perl_bin" ]]; then
+        local missing=() m pm
+        while IFS= read -r m; do
+            [[ -z "$m" ]] && continue
+            case "$m" in
+                strict|warnings|constant|lib|vars|utf8|feature|overload|parent|base|integer|POSIX|Exporter|Carp|Cwd) continue ;;
+            esac
+            # Skip lcov's own modules (present on disk): a load failure there is a
+            # cascade from a genuinely-missing dependency, which is reported itself.
+            pm="${m//:://}.pm"
+            [[ -e "$PREFIX/lib/$pm" || -e "$PREFIX/lib/lcov/$pm" ]] && continue
+            PERL5LIB="${plib}${PERL5LIB:+:$PERL5LIB}" "$perl_bin" -M"$m" -e1 >/dev/null 2>&1 \
+                || missing+=("$m")
+        done < <(
+            # Scan genhtml + the top-level lcov libs only (not the vendored subdir,
+            # whose POD prose contains "use ..." examples). Require a real `use X;`
+            # statement terminated by a semicolon so POD lines don't false-match.
+            { printf '%s\n' "$gh"; find "$PREFIX/lib" -maxdepth 1 -name '*.pm' 2>/dev/null; } \
+            | xargs grep -hE '^[[:space:]]*use[[:space:]]+[A-Za-z][A-Za-z0-9_:]+.*;' 2>/dev/null \
+            | sed -E 's/^[[:space:]]*use[[:space:]]+([A-Za-z][A-Za-z0-9_:]+).*/\1/' \
+            | sort -u
+        )
+        [[ ${#missing[@]} -gt 0 ]] && mods="$(printf '%s\n' "${missing[@]}" | paste -sd', ' -)"
+    fi
+    # Fallback when perl probing isn't possible: name the one module the compile
+    # error surfaced.
+    if [[ -z "$mods" ]]; then
+        mods="$(printf '%s\n' "$out" \
+            | grep -oE "Can't locate [A-Za-z0-9_/]+\.pm" \
+            | sed "s#Can't locate ##; s#/#::#g; s#\.pm##" \
+            | sort -u | paste -sd', ' - || true)"
+    fi
+    [[ -n "$mods" ]] && echo "       Missing Perl modules: ${mods}" >&2
+    echo "       Coverage capture (lcov) still works; only genhtml HTML output is affected." >&2
+    echo "       Stage these modules into the perl-vendor-lcov prebuilt archive to enable it." >&2
+}
+_verify_genhtml
+
+devkit_write_receipt "$TOOL" "$VERSION" "$DEVKIT_PLATFORM" "$PREFIX"
+
+echo "==> lcov ${VERSION} installed."

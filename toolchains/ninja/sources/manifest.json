@@ -1,0 +1,10 @@
+{
+  "tool": "ninja-sources",
+  "version": "vendored",
+  "note": "Upstream source archives for from-source builds (build.sh). Externalized via Option B; rehydrate with fetch-artifacts.sh.",
+  "files": {
+    "ninja-1.13.2-src.tar.xz": {
+      "sha256": "d1d7758b835d09a9bf5d1f6ca8cd732a8d9054f63f9eabf488f0ffc9a665aec2"
+    }
+  }
+}

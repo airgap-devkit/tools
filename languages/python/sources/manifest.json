@@ -1,0 +1,10 @@
+{
+  "tool": "python-sources",
+  "version": "vendored",
+  "note": "Upstream source archives for from-source builds (build.sh). Externalized via Option B; rehydrate with fetch-artifacts.sh.",
+  "files": {
+    "Python-3.14.4.tar.xz": {
+      "sha256": "d923c51303e38e249136fc1bdf3568d56ecb03214efdef48516176d3d7faaef8"
+    }
+  }
+}

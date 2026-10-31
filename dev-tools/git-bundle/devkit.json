@@ -1,0 +1,15 @@
+{
+  "id": "git-bundle",
+  "name": "git-bundle Transfer Tool",
+  "version": "N/A",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Transfers Git repositories with nested submodules across air-gapped network boundaries.",
+  "setup": "setup.sh",
+  "receipt_name": "git-bundle",
+  "estimate": "~15s",
+  "uses_prebuilt": false,
+  "sort_order": 56,
+  "source": "default",
+  "check_cmd": "git --version 2>&1 && echo 'git-bundle available'"
+}

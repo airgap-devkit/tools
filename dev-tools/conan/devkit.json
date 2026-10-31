@@ -1,0 +1,24 @@
+{
+  "id": "conan",
+  "name": "Conan",
+  "version": "2.32.0",
+  "category": "Developer Tools",
+  "platform": "both",
+  "description": "Decentralized C/C++ package manager for managing dependencies and reproducible build configurations.",
+  "setup": "setup.sh",
+  "receipt_name": "conan",
+  "estimate": "~15s",
+  "uses_prebuilt": true,
+  "sort_order": 52,
+  "source": "default",
+  "check_cmd": "conan --version",
+  "check_binary": "conan",
+  "check_args": [
+    "--version"
+  ],
+  "github_repo": "conan-io/conan",
+  "tag_prefix": "",
+  "asset_match": "windows-x86_64",
+  "asset_match_linux": "linux-x86_64",
+  "asset_exclude": "installer"
+}
